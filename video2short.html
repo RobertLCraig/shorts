@@ -9,6 +9,7 @@
   <link
     href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800&family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap"
     rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <style>
     :root {
       --bg-base: #08090c;
@@ -1690,6 +1691,8 @@
             <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px">
               <button class="btn btn-primary" onclick="downloadProcessed()"
                 style="width:100%;justify-content:center;padding:14px">⬇ Download Video</button>
+              <button class="btn btn-sm" onclick="downloadZip()" id="dlZipBtn"
+                style="display:none;width:100%;justify-content:center">📦 Download Project Zip</button>
               <button class="btn btn-sm" onclick="downloadThumb()" id="dlThumbBtn"
                 style="display:none;width:100%;justify-content:center">🖼 Thumbnail</button>
               <button class="btn btn-sm btn-ghost" onclick="goStep(2)" style="width:100%;justify-content:center">←
@@ -2294,7 +2297,17 @@
 
         // Use captureStream(targetFps) — automatic frame capture mode (proven to work)
         const stream = offCanvas.captureStream(targetFps);
-        const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9' : 'video/webm';
+
+        // Prioritize MP4 if supported, else fallback to VP9 or default WebM
+        let mimeType = 'video/webm;codecs=vp9';
+        let ext = 'webm';
+        if (MediaRecorder.isTypeSupported('video/mp4')) {
+          mimeType = 'video/mp4';
+          ext = 'mp4';
+        } else if (!MediaRecorder.isTypeSupported(mimeType)) {
+          mimeType = 'video/webm'; // fallback
+        }
+
         const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: S.crf <= 18 ? 12e6 : S.crf <= 23 ? 8e6 : 4e6 });
         const chunks = []; recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
         const stopped = new Promise(r => { recorder.onstop = r; });
@@ -2369,8 +2382,9 @@
         const blob = new Blob(chunks, { type: mimeType });
         if (S.processedUrl) URL.revokeObjectURL(S.processedUrl);
         S.processedBlob = blob; S.processedUrl = URL.createObjectURL(blob);
+        S.exportExt = ext; // Save extension for download
         overlay.classList.remove('active');
-        toast('Video processed!', 'ok');
+        toast(`Video processed as ${ext.toUpperCase()}!`, 'ok');
         goStep(3);
       } catch (err) { overlay.classList.remove('active'); toast('Error: ' + err.message, 'err'); console.error(err); }
     }
@@ -2381,8 +2395,9 @@
     function setupExportPage() {
       document.getElementById('exportVideo').src = S.processedUrl;
       document.getElementById('dlThumbBtn').style.display = S.thumbnail ? 'block' : 'none';
+      document.getElementById('dlZipBtn').style.display = 'block';
       const platforms = [
-        { name: 'YouTube Shorts', icon: '▶', color: '#ff0000', bg: '#ff000018', spec: '9:16 · ≤60s · #Shorts', uploadUrl: 'https://studio.youtube.com/channel/UC/shorts', desc: () => { let d = S.meta.title + '\n\n' + (S.meta.desc || ''); if (S.meta.fileUrl) d += '\n\n🔗 ' + S.meta.fileUrl; if (S.meta.shopUrl) d += '\n🛒 ' + S.meta.shopUrl; d += '\n\n' + S.meta.tags.map(t => '#' + t).join(' ') + ' #Shorts'; return d.trim() } },
+        { name: 'YouTube Shorts', icon: '▶', color: '#ff0000', bg: '#ff000018', spec: '9:16 · ≤60s · #Shorts', uploadUrl: 'https://studio.youtube.com/', desc: () => { let d = S.meta.title + '\n\n' + (S.meta.desc || ''); if (S.meta.fileUrl) d += '\n\n🔗 ' + S.meta.fileUrl; if (S.meta.shopUrl) d += '\n🛒 ' + S.meta.shopUrl; d += '\n\n' + S.meta.tags.map(t => '#' + t).join(' ') + ' #Shorts'; return d.trim() } },
         { name: 'TikTok', icon: '♪', color: '#00f2ea', bg: '#00f2ea18', spec: '9:16 · ≤10m · 15-30s best', uploadUrl: 'https://www.tiktok.com/upload', desc: () => { let d = S.meta.desc || S.meta.title; if (S.meta.fileUrl) d += '\n\n🔗 ' + S.meta.fileUrl; d += '\n\n' + S.meta.tags.map(t => '#' + t).join(' ') + ' #fyp'; return d.trim() } },
         { name: 'Instagram Reels', icon: '📷', color: '#e4405f', bg: '#e4405f18', spec: '9:16 · ≤90s', uploadUrl: 'https://www.instagram.com/', desc: () => { let d = S.meta.desc || S.meta.title; d += '\n\n' + S.meta.tags.map(t => '#' + t).join(' ') + ' #reels'; return d.trim() } },
         { name: 'Pinterest', icon: '📌', color: '#bd081c', bg: '#bd081c18', spec: '9:16 · ≤60s', uploadUrl: 'https://www.pinterest.com/pin-creation-tool/', desc: () => { let d = S.meta.title + '\n\n' + (S.meta.desc || ''); if (S.meta.fileUrl) d += '\n\n' + S.meta.fileUrl; return d.trim() } },
@@ -2390,8 +2405,46 @@
       ];
       document.getElementById('exportCards').innerHTML = platforms.map(p => { const d = p.desc(); return `<div class="platform-card"><div class="platform-icon" style="background:${p.bg};color:${p.color}">${p.icon}</div><div class="platform-info"><div class="platform-name">${p.name}</div><div class="platform-spec">${p.spec}</div><div class="platform-desc">${esc(d)}</div><div class="platform-actions"><button class="btn btn-sm btn-primary" onclick="copyText(decodeURIComponent('${encodeURIComponent(d)}'))">📋 Copy</button><button class="btn btn-xs" onclick="copyText('${S.meta.tags.map(t => '#' + t).join(' ')}')">🏷 Tags</button><a class="btn-upload" href="${p.uploadUrl}" target="_blank" rel="noopener" style="color:${p.color};border-color:${p.color}40">↗ Upload</a></div></div></div>` }).join('');
     }
-    function downloadProcessed() { if (!S.processedBlob) return; const a = document.createElement('a'); a.href = S.processedUrl; a.download = `${(S.meta.title || 'video').replace(/[^a-zA-Z0-9\s\-_]/g, '').replace(/\s+/g, '_')}_vertical.webm`; a.click(); toast('Download started', 'ok') }
+    function downloadProcessed() {
+      if (!S.processedBlob) return;
+      const ext = S.exportExt || 'webm';
+      const a = document.createElement('a');
+      a.href = S.processedUrl;
+      a.download = `${(S.meta.title || 'video').replace(/[^a-zA-Z0-9\s\-_]/g, '').replace(/\s+/g, '_')}_vertical.${ext}`;
+      a.click();
+      toast('Download started', 'ok');
+    }
     function downloadThumb() { if (!S.thumbnail) return; const a = document.createElement('a'); a.href = S.thumbnail.url; a.download = `${(S.meta.title || 'thumb').replace(/[^a-zA-Z0-9\s\-_]/g, '').replace(/\s+/g, '_')}_thumb.png`; a.click() }
+    async function downloadZip() {
+      if (!S.processedBlob) return;
+      const zip = new JSZip();
+      const safeTitle = (S.meta.title || 'project').replace(/[^a-zA-Z0-9\s\-_]/g, '').replace(/\s+/g, '_');
+      const ext = S.exportExt || 'webm';
+
+      // Video
+      zip.file(`${safeTitle}_vertical.${ext}`, S.processedBlob);
+
+      // Thumbnail
+      if (S.thumbnail && S.thumbnail.blob) {
+        zip.file(`${safeTitle}_thumb.png`, S.thumbnail.blob);
+      }
+
+      // Metadata
+      const metaText = `FOLDER_NAME: ${safeTitle}\n\n` +
+        `TITLE: ${S.meta.title}\n\n` +
+        `DESCRIPTION:\n${S.meta.desc}\n\n` +
+        `URLS:\nModel: ${S.meta.fileUrl}\nShop: ${S.meta.shopUrl}\n\n` +
+        `TAGS:\n${S.meta.tags.join(', ')}`;
+      zip.file(`${safeTitle}_info.txt`, metaText);
+
+      // Generate and download
+      const content = await zip.generateAsync({ type: 'blob' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(content);
+      a.download = `${safeTitle}_project.zip`;
+      a.click();
+      toast('Zip download started', 'ok');
+    }
 
     // ═══════════════════════════════════════════════════════════════════════
     //  UTILITIES
