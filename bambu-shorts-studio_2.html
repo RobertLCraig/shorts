@@ -404,8 +404,8 @@
     .vid-chip {
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding: 6px 8px 6px 6px;
+      gap: 10px;
+      padding: 6px 10px 6px 6px;
       background: var(--bg-surface);
       border: 1px solid var(--border-default);
       border-radius: var(--radius-sm);
@@ -426,9 +426,9 @@
     }
 
     .vid-chip-thumb {
-      width: 72px;
-      height: 42px;
-      border-radius: 4px;
+      width: 120px;
+      height: 68px;
+      border-radius: 6px;
       overflow: hidden;
       background: #000;
       flex-shrink: 0;
@@ -444,23 +444,25 @@
     .vid-chip-info {
       display: flex;
       flex-direction: column;
-      gap: 1px;
+      gap: 2px;
       min-width: 0
     }
 
     .vid-chip-name {
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 500;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      max-width: 160px
+      max-width: 120px;
+      color: var(--text-2)
     }
 
     .vid-chip-dur {
       font-family: var(--font-mono);
-      font-size: 10px;
-      color: var(--text-3)
+      font-size: 12px;
+      color: var(--text-1);
+      font-weight: 600
     }
 
     .vid-chip-remove {
@@ -1171,7 +1173,29 @@
 
     .platform-actions {
       display: flex;
-      gap: 6px
+      gap: 6px;
+      flex-wrap: wrap
+    }
+
+    .btn-upload {
+      background: transparent;
+      border: 1px solid;
+      font-size: 12px;
+      padding: 5px 12px;
+      border-radius: var(--radius-sm);
+      font-weight: 500;
+      cursor: pointer;
+      transition: all .2s var(--ease);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-family: var(--font-body)
+    }
+
+    .btn-upload:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.2)
     }
 
     /* ═══ BUTTONS ═══ */
@@ -2358,13 +2382,13 @@
       document.getElementById('exportVideo').src = S.processedUrl;
       document.getElementById('dlThumbBtn').style.display = S.thumbnail ? 'block' : 'none';
       const platforms = [
-        { name: 'YouTube Shorts', icon: '▶', color: '#ff0000', bg: '#ff000018', spec: '9:16 · ≤60s · #Shorts', desc: () => { let d = S.meta.title + '\n\n' + (S.meta.desc || ''); if (S.meta.fileUrl) d += '\n\n🔗 ' + S.meta.fileUrl; if (S.meta.shopUrl) d += '\n🛒 ' + S.meta.shopUrl; d += '\n\n' + S.meta.tags.map(t => '#' + t).join(' ') + ' #Shorts'; return d.trim() } },
-        { name: 'TikTok', icon: '♪', color: '#00f2ea', bg: '#00f2ea18', spec: '9:16 · ≤10m · 15-30s best', desc: () => { let d = S.meta.desc || S.meta.title; if (S.meta.fileUrl) d += '\n\n🔗 ' + S.meta.fileUrl; d += '\n\n' + S.meta.tags.map(t => '#' + t).join(' ') + ' #fyp'; return d.trim() } },
-        { name: 'Instagram Reels', icon: '📷', color: '#e4405f', bg: '#e4405f18', spec: '9:16 · ≤90s', desc: () => { let d = S.meta.desc || S.meta.title; d += '\n\n' + S.meta.tags.map(t => '#' + t).join(' ') + ' #reels'; return d.trim() } },
-        { name: 'Pinterest', icon: '📌', color: '#bd081c', bg: '#bd081c18', spec: '9:16 · ≤60s', desc: () => { let d = S.meta.title + '\n\n' + (S.meta.desc || ''); if (S.meta.fileUrl) d += '\n\n' + S.meta.fileUrl; return d.trim() } },
-        { name: 'Facebook Reels', icon: 'f', color: '#1877f2', bg: '#1877f218', spec: '9:16 · ≤90s', desc: () => { let d = S.meta.desc || S.meta.title; d += '\n\n' + S.meta.tags.map(t => '#' + t).join(' '); return d.trim() } },
+        { name: 'YouTube Shorts', icon: '▶', color: '#ff0000', bg: '#ff000018', spec: '9:16 · ≤60s · #Shorts', uploadUrl: 'https://studio.youtube.com/channel/UC/shorts', desc: () => { let d = S.meta.title + '\n\n' + (S.meta.desc || ''); if (S.meta.fileUrl) d += '\n\n🔗 ' + S.meta.fileUrl; if (S.meta.shopUrl) d += '\n🛒 ' + S.meta.shopUrl; d += '\n\n' + S.meta.tags.map(t => '#' + t).join(' ') + ' #Shorts'; return d.trim() } },
+        { name: 'TikTok', icon: '♪', color: '#00f2ea', bg: '#00f2ea18', spec: '9:16 · ≤10m · 15-30s best', uploadUrl: 'https://www.tiktok.com/upload', desc: () => { let d = S.meta.desc || S.meta.title; if (S.meta.fileUrl) d += '\n\n🔗 ' + S.meta.fileUrl; d += '\n\n' + S.meta.tags.map(t => '#' + t).join(' ') + ' #fyp'; return d.trim() } },
+        { name: 'Instagram Reels', icon: '📷', color: '#e4405f', bg: '#e4405f18', spec: '9:16 · ≤90s', uploadUrl: 'https://www.instagram.com/', desc: () => { let d = S.meta.desc || S.meta.title; d += '\n\n' + S.meta.tags.map(t => '#' + t).join(' ') + ' #reels'; return d.trim() } },
+        { name: 'Pinterest', icon: '📌', color: '#bd081c', bg: '#bd081c18', spec: '9:16 · ≤60s', uploadUrl: 'https://www.pinterest.com/pin-creation-tool/', desc: () => { let d = S.meta.title + '\n\n' + (S.meta.desc || ''); if (S.meta.fileUrl) d += '\n\n' + S.meta.fileUrl; return d.trim() } },
+        { name: 'Facebook Reels', icon: 'f', color: '#1877f2', bg: '#1877f218', spec: '9:16 · ≤90s', uploadUrl: 'https://www.facebook.com/reels/create', desc: () => { let d = S.meta.desc || S.meta.title; d += '\n\n' + S.meta.tags.map(t => '#' + t).join(' '); return d.trim() } },
       ];
-      document.getElementById('exportCards').innerHTML = platforms.map(p => { const d = p.desc(); return `<div class="platform-card"><div class="platform-icon" style="background:${p.bg};color:${p.color}">${p.icon}</div><div class="platform-info"><div class="platform-name">${p.name}</div><div class="platform-spec">${p.spec}</div><div class="platform-desc">${esc(d)}</div><div class="platform-actions"><button class="btn btn-sm btn-primary" onclick="copyText(decodeURIComponent('${encodeURIComponent(d)}'))">📋 Copy</button><button class="btn btn-xs" onclick="copyText('${S.meta.tags.map(t => '#' + t).join(' ')}')">🏷 Tags</button></div></div></div>` }).join('');
+      document.getElementById('exportCards').innerHTML = platforms.map(p => { const d = p.desc(); return `<div class="platform-card"><div class="platform-icon" style="background:${p.bg};color:${p.color}">${p.icon}</div><div class="platform-info"><div class="platform-name">${p.name}</div><div class="platform-spec">${p.spec}</div><div class="platform-desc">${esc(d)}</div><div class="platform-actions"><button class="btn btn-sm btn-primary" onclick="copyText(decodeURIComponent('${encodeURIComponent(d)}'))">📋 Copy</button><button class="btn btn-xs" onclick="copyText('${S.meta.tags.map(t => '#' + t).join(' ')}')">🏷 Tags</button><a class="btn-upload" href="${p.uploadUrl}" target="_blank" rel="noopener" style="color:${p.color};border-color:${p.color}40">↗ Upload</a></div></div></div>` }).join('');
     }
     function downloadProcessed() { if (!S.processedBlob) return; const a = document.createElement('a'); a.href = S.processedUrl; a.download = `${(S.meta.title || 'video').replace(/[^a-zA-Z0-9\s\-_]/g, '').replace(/\s+/g, '_')}_vertical.webm`; a.click(); toast('Download started', 'ok') }
     function downloadThumb() { if (!S.thumbnail) return; const a = document.createElement('a'); a.href = S.thumbnail.url; a.download = `${(S.meta.title || 'thumb').replace(/[^a-zA-Z0-9\s\-_]/g, '').replace(/\s+/g, '_')}_thumb.png`; a.click() }
