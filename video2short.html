@@ -800,6 +800,83 @@
       color: var(--text-4)
     }
 
+    /* Audio List */
+    .audio-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .audio-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-sm);
+    }
+
+    .audio-icon {
+      font-size: 16px;
+    }
+
+    .audio-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .audio-name {
+      font-size: 12px;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 2px;
+    }
+
+    .audio-vol {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .audio-vol input {
+      width: 60px;
+      height: 4px;
+      border-radius: 2px;
+      -webkit-appearance: none;
+      background: var(--border-strong);
+      cursor: pointer;
+    }
+
+    .audio-vol input::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--text-2);
+      transition: all 0.2s;
+    }
+
+    .audio-vol input:hover::-webkit-slider-thumb {
+      background: var(--accent);
+      transform: scale(1.2);
+    }
+
+    .audio-remove {
+      cursor: pointer;
+      color: var(--text-4);
+      padding: 4px;
+      transition: color 0.2s;
+      font-size: 16px;
+    }
+
+    .audio-remove:hover {
+      color: var(--red);
+    }
+
     .field textarea {
       resize: vertical;
       min-height: 70px
@@ -1673,6 +1750,18 @@
                 </div>
               </div>
             </div>
+
+            <div class="panel-card">
+              <div class="panel-header">🎵 Audio Tracks <span class="badge badge-amber" id="audioBadge">Off</span></div>
+              <div class="panel-body">
+                <div class="dropzone" id="audioDropzone">
+                  <div class="dropzone-icon">🔊</div>
+                  <div class="dropzone-text">Drop audio files</div>
+                  <div class="dropzone-hint">MP3, WAV</div><input type="file" id="audioInput" accept="audio/*" multiple>
+                </div>
+                <div class="audio-list" id="audioList"></div>
+              </div>
+            </div>
             <button class="btn btn-primary" onclick="processAndExport()"
               style="width:100%;justify-content:center;padding:14px">⚡ Process & Export</button>
             <button class="btn btn-ghost btn-sm" onclick="goStep(1)" style="width:100%;justify-content:center">← Back to
@@ -1723,6 +1812,7 @@
     // ═══════════════════════════════════════════════════════════════════════
     const S = {
       videos: [],           // [{ id, file, url, el, name, duration, w, h, fileName }]
+      audios: [],           // [{ id, file, url, el, name, volume }]
       nextId: 1,
       layout: 'single',     // single | split-h | pip
       lanes: { main: [], second: [] },  // arrays of video ids in sequence order
@@ -1755,6 +1845,116 @@
       if (n === 2) { computeMontageDuration(); startPreviewLoop(); } else stopPreviewLoop();
       if (n === 3) setupExportPage();
     }
+    // ... (lines 1848-2239 are skipped in this replacement block for brevity, ensuring context matches)
+
+    function seekVideoTo(el, localTime) {
+      if (Math.abs(el.currentTime - localTime) > 0.15) el.currentTime = localTime;
+    }
+
+    // Sync audio tracks during preview
+    function syncAudio(t) {
+      S.audios.forEach(a => {
+        if (!a.el) return;
+        // Simple sync: audio time = global time. 
+        // If audio is shorter, it stops (unless we add loop support later).
+        if (t < a.el.duration) {
+          if (Math.abs(a.el.currentTime - t) > 0.3) a.el.currentTime = t;
+          if (S.playing && a.el.paused) a.el.play().catch(() => { });
+          else if (!S.playing && !a.el.paused) a.el.pause();
+        } else {
+          if (!a.el.paused) a.el.pause();
+        }
+      });
+    }
+
+    // Hover preview for vid-chip thumbnails
+    function chipHoverPlay(thumbEl) {
+      const video = thumbEl.querySelector('video');
+      if (video) { video.currentTime = 0; video.play().catch(() => { }); }
+    }
+    function chipHoverPause(thumbEl) {
+      const video = thumbEl.querySelector('video');
+      if (video) { video.pause(); video.currentTime = 0; }
+    }
+
+    // Robust seek... (omitted)
+
+    function togglePlay() {
+      S.playing = !S.playing;
+      document.getElementById('playOverlay').classList.toggle('hidden', S.playing);
+      document.getElementById('playPauseBtn').textContent = S.playing ? '⏸ Pause' : '▶ Play';
+
+      // Toggle audio
+      S.audios.forEach(a => {
+        if (S.playing && S.montageTime < a.el.duration) a.el.play().catch(() => { });
+        else a.el.pause();
+      });
+    }
+
+    function updateTimelineUI() {
+      if (S.montageDuration <= 0) return;
+      const pct = (S.montageTime / S.montageDuration) * 100;
+      document.getElementById('timelineFill').style.width = pct + '%';
+      document.getElementById('timeLabel').textContent = `${fmtTime(S.montageTime / S.speed)} / ${fmtTime(S.montageDuration / S.speed)}`;
+    }
+
+    function seekTimeline(e) {
+      const rect = document.getElementById('timeline').getBoundingClientRect();
+      S.montageTime = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)) * S.montageDuration;
+
+      // Seek all audios
+      S.audios.forEach(a => {
+        if (a.el) a.el.currentTime = S.montageTime;
+      });
+    }
+
+    // ... (Carousel omitted)
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  AUDIO TRACKS
+    // ═══════════════════════════════════════════════════════════════════════
+    setupDropzone('audioDropzone', 'audioInput', files => {
+      files.forEach(f => {
+        if (!f.type.startsWith('audio/')) return;
+        const u = URL.createObjectURL(f);
+        const el = new Audio(u);
+        const entry = { id: S.nextId++, file: f, url: u, el, name: f.name, volume: 1 };
+        S.audios.push(entry);
+      });
+      if (files.length) { renderAudioList(); updateAudioBadge(); toast(`Added ${files.length} audio track(s)`, 'ok'); }
+    });
+
+    function renderAudioList() {
+      document.getElementById('audioList').innerHTML = S.audios.map((a, i) => `
+        <div class="audio-item">
+          <div class="audio-icon">🎵</div>
+          <div class="audio-info"><div class="audio-name" title="${esc(a.name)}">${esc(a.name)}</div></div>
+          <div class="audio-vol" title="Volume: ${Math.round(a.volume * 100)}%">
+            <input type="range" min="0" max="1" step="0.05" value="${a.volume}" oninput="setAudioVol(${i}, this.value)">
+          </div>
+          <div class="audio-remove" onclick="removeAudio(${i})">×</div>
+        </div>
+      `).join('');
+    }
+
+    function setAudioVol(i, v) {
+      const a = S.audios[i];
+      if (a) { a.volume = parseFloat(v); if (a.el) a.el.volume = a.volume; }
+    }
+
+    function removeAudio(i) {
+      const a = S.audios[i];
+      if (a) { URL.revokeObjectURL(a.url); }
+      S.audios.splice(i, 1);
+      renderAudioList();
+      updateAudioBadge();
+    }
+
+    function updateAudioBadge() {
+      const b = document.getElementById('audioBadge');
+      if (S.audios.length) { b.textContent = `${S.audios.length}`; b.className = 'badge badge-green'; }
+      else { b.textContent = 'Off'; b.className = 'badge badge-amber'; }
+    }
 
     // ═══════════════════════════════════════════════════════════════════════
     //  STEP 1: VIDEO UPLOAD & DRAG-AND-DROP LANES
@@ -1782,6 +1982,12 @@
       });
       toast(`Added ${valid.length} video${valid.length > 1 ? 's' : ''}`, 'ok');
       if (!S.meta.title && S.videos.length) { S.meta.title = S.videos[0].name; document.getElementById('metaTitle').value = S.meta.title; onMetaChange(); }
+
+      // Auto-add single video to main lane
+      if (S.videos.length === 1 && S.lanes.main.length === 0) {
+        S.lanes.main.push(S.videos[0].id);
+      }
+
       document.getElementById('projectArea').style.display = 'block';
       renderAll();
     }
@@ -2060,6 +2266,7 @@
         }
         lastTs = ts;
         drawFrame(ctx, S.montageTime);
+        syncAudio(S.montageTime);
         updateTimelineUI();
       })(performance.now());
       startCarouselTimer();
