@@ -2156,6 +2156,7 @@
         version: 3,
         layout: S.layout,
         videos: S.videos.map(v => ({ id: v.id, name: v.name, fileName: v.fileName, duration: v.duration })),
+        audios: S.audios.map(a => ({ name: a.name, volume: a.volume })),
         lanes: { main: S.lanes.main, second: S.lanes.second },
         meta: S.meta,
         settings: { cropMode: S.cropMode, cropOffset: S.cropOffset, speed: S.speed, crf: S.crf },
@@ -2166,7 +2167,7 @@
       a.href = URL.createObjectURL(blob);
       a.download = `bambu-project-${Date.now()}.json`;
       a.click(); URL.revokeObjectURL(a.href);
-      toast('Project saved — re-upload videos when loading', 'ok');
+      toast('Project saved — re-upload videos/audio when loading', 'ok');
     }
 
     function loadProject(e) {
@@ -2197,6 +2198,14 @@
             return saved ? (nameToId[saved.fileName] || null) : null;
           }).filter(Boolean);
 
+          // Audio tracks cannot be automatically restored from JSON (no file access)
+          // So we just clear the list and let user re-add them.
+          // In a real app we might show "Missing: song.mp3" placeholders.
+          S.audios.forEach(a => URL.revokeObjectURL(a.url));
+          S.audios = [];
+          renderAudioList();
+          updateAudioBadge();
+
           // Update UI
           document.getElementById('metaTitle').value = S.meta.title;
           document.getElementById('metaDesc').value = S.meta.desc || '';
@@ -2207,7 +2216,7 @@
           renderTags();
           renderAll();
           onMetaChange();
-          toast('Project loaded — upload matching videos if needed', 'ok');
+          toast('Project loaded — upload matching videos/audio if needed', 'ok');
         } catch (err) {
           toast('Invalid project file: ' + err.message, 'err');
         }
@@ -2505,6 +2514,25 @@
         // Use captureStream(targetFps) — automatic frame capture mode (proven to work)
         const stream = offCanvas.captureStream(targetFps);
 
+        // ── AUDIO MIXING ──
+        let audioCtx, dest;
+        if (S.audios.length) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          dest = audioCtx.createMediaStreamDestination();
+          S.audios.forEach(a => {
+            if (!a.el) return;
+            const source = audioCtx.createMediaElementSource(a.el);
+            const gain = audioCtx.createGain();
+            gain.gain.value = a.volume;
+            source.connect(gain);
+            gain.connect(dest);
+            a.el.play().catch(e => console.warn('Audio export play failed', e));
+          });
+          if (dest.stream.getAudioTracks().length) {
+            stream.addTrack(dest.stream.getAudioTracks()[0]);
+          }
+        }
+
         // Prioritize MP4 if supported, else fallback to VP9 or default WebM
         let mimeType = 'video/webm;codecs=vp9';
         let ext = 'webm';
@@ -2586,6 +2614,13 @@
         }
 
         recorder.stop(); await stopped;
+
+        // Cleanup audio context
+        if (audioCtx) {
+          S.audios.forEach(a => { if (a.el) { a.el.pause(); a.el.currentTime = 0; } });
+          audioCtx.close();
+        }
+
         const blob = new Blob(chunks, { type: mimeType });
         if (S.processedUrl) URL.revokeObjectURL(S.processedUrl);
         S.processedBlob = blob; S.processedUrl = URL.createObjectURL(blob);
