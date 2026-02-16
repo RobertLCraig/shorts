@@ -1456,6 +1456,133 @@
       }
     }
 
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(5px);
+      z-index: 1000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .modal-box {
+      background: var(--surface);
+      border: 2px solid var(--border);
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 20px 50px rgba(0, 0, 0, 0.5);
+      border-radius: 16px;
+      padding: 24px;
+      width: 100%;
+      position: relative;
+      max-width: 600px;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .modal-body {
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .btn-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    .btn-close:hover {
+      color: var(--text);
+    }
+
+    /* Library Styles */
+    .lib-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .lib-tab {
+      padding: 6px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-muted);
+      transition: all 0.2s;
+    }
+
+    .lib-tab:hover {
+      color: var(--text);
+      background: var(--surface-hover);
+    }
+
+    .lib-tab.active {
+      background: var(--primary);
+      color: #000;
+    }
+
+    .lib-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .lib-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      background: var(--bg);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .lib-item:hover {
+      border-color: var(--primary);
+    }
+
+    .lib-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .lib-name {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text);
+    }
+
+    .lib-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .lib-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
     @media(max-width:1100px) {
       .editor-layout {
         grid-template-columns: 280px 1fr
@@ -1751,25 +1878,59 @@
               </div>
             </div>
 
+            <!-- Audio Tracks Panel -->
             <div class="panel-card">
-              <div class="panel-header">🎵 Audio Tracks <span class="badge badge-amber" id="audioBadge">Off</span></div>
+              <div class="panel-header">
+                <h3>Audio Tracks <span class="badge badge-amber" id="audioBadge">Off</span></h3>
+                <button class="btn btn-xs btn-primary" onclick="openAudioLibrary()">🎵 Library</button>
+              </div>
               <div class="panel-body">
                 <div class="dropzone" id="audioDropzone">
-                  <div class="dropzone-icon">🔊</div>
-                  <div class="dropzone-text">Drop audio files</div>
-                  <div class="dropzone-hint">MP3, WAV</div><input type="file" id="audioInput" accept="audio/*" multiple>
+                  <div class="drop-icon">🎵</div>
+                  <div class="drop-text">Drag audio files here<br><span style="font-size:12px;opacity:0.7">or click to
+                      browse</span></div>
+                  <input type="file" id="audioInput" accept="audio/*" multiple hidden>
                 </div>
                 <div class="audio-list" id="audioList"></div>
               </div>
             </div>
-            <button class="btn btn-primary" onclick="processAndExport()"
-              style="width:100%;justify-content:center;padding:14px">⚡ Process & Export</button>
-            <button class="btn btn-ghost btn-sm" onclick="goStep(1)" style="width:100%;justify-content:center">← Back to
-              Project</button>
+
+            <!-- Editor Actions -->
+            <div style="margin-top:20px;display:flex;flex-direction:column;gap:8px">
+              <button class="btn btn-primary" onclick="processAndExport()"
+                style="width:100%;justify-content:center;padding:14px">⚡ Process & Export</button>
+              <button class="btn btn-ghost btn-sm" onclick="goStep(1)" style="width:100%;justify-content:center">← Back
+                to Project</button>
+            </div>
+
+          </div> <!-- End Assets Panel -->
+        </div> <!-- End Editor Layout -->
+      </div> <!-- End Container -->
+    </section>
+
+    <!-- AUDIO LIBRARY MODAL -->
+    <div id="audioLibraryModal" class="modal-overlay" style="display:none">
+      <div class="modal-box" style="max-width:600px">
+        <div class="modal-header">
+          <h3>Online Audio Library</h3>
+          <button class="btn-close" onclick="closeAudioLibrary()">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="lib-tabs">
+            <div class="lib-tab active" onclick="renderLibrary('All')">All</div>
+            <div class="lib-tab" onclick="renderLibrary('Upbeat')">Upbeat</div>
+            <div class="lib-tab" onclick="renderLibrary('Lofi')">Lofi</div>
           </div>
+          <div class="lib-list" id="libList">
+            <!-- Items injected by JS -->
+          </div>
+          <p class="text-sm text-muted mt-4">Music by Kevin MacLeod (incompetech.com). Licensed under Creative Commons:
+            By Attribution 4.0. Attribution will be automatically added to your video description.</p>
         </div>
       </div>
-    </section>
+    </div>
+
+
 
     <!-- ═══ STEP 3: EXPORT ═══ -->
     <section class="step-section" id="step3">
@@ -1813,6 +1974,17 @@
     const S = {
       videos: [],           // [{ id, file, url, el, name, duration, w, h, fileName }]
       audios: [],           // [{ id, file, url, el, name, volume }]
+      // Curated Library (Kevin MacLeod - Incompetech)
+      // Using https links if available, otherwise might need proxy or different host.
+      // Verified Monkeys Spinning Monkeys is on incompetech.com
+      audioLibrary: [
+        { name: 'Monkeys Spinning Monkeys', author: 'Kevin MacLeod', genre: 'Upbeat', url: 'https://incompetech.com/music/royalty-free/mp3-royaltyfree/Monkeys%20Spinning%20Monkeys.mp3', attribution: 'Monkeys Spinning Monkeys by Kevin MacLeod (incompetech.com)\nLicensed under Creative Commons: By Attribution 4.0\nhttp://creativecommons.org/licenses/by/4.0/' },
+        { name: 'Local Forecast - Elevator', author: 'Kevin MacLeod', genre: 'Lofi', url: 'https://incompetech.com/music/royalty-free/mp3-royaltyfree/Local%20Forecast%20-%20Elevator.mp3', attribution: 'Local Forecast - Elevator by Kevin MacLeod (incompetech.com)\nLicensed under Creative Commons: By Attribution 4.0\nhttp://creativecommons.org/licenses/by/4.0/' },
+        { name: 'Upbeat Forever', author: 'Kevin MacLeod', genre: 'Upbeat', url: 'https://incompetech.com/music/royalty-free/mp3-royaltyfree/Upbeat%20Forever.mp3', attribution: 'Upbeat Forever by Kevin MacLeod (incompetech.com)\nLicensed under Creative Commons: By Attribution 4.0\nhttp://creativecommons.org/licenses/by/4.0/' },
+        { name: 'Mining by Moonlight', author: 'Kevin MacLeod', genre: 'Lofi', url: 'https://incompetech.com/music/royalty-free/mp3-royaltyfree/Mining%20by%20Moonlight.mp3', attribution: 'Mining by Moonlight by Kevin MacLeod (incompetech.com)\nLicensed under Creative Commons: By Attribution 4.0\nhttp://creativecommons.org/licenses/by/4.0/' },
+        { name: 'Sneaky Snitch', author: 'Kevin MacLeod', genre: 'Upbeat', url: 'https://incompetech.com/music/royalty-free/mp3-royaltyfree/Sneaky%20Snitch.mp3', attribution: 'Sneaky Snitch by Kevin MacLeod (incompetech.com)\nLicensed under Creative Commons: By Attribution 4.0\nhttp://creativecommons.org/licenses/by/4.0/' },
+        { name: 'After Lemons', author: 'Kevin MacLeod', genre: 'Lofi', url: 'https://incompetech.com/music/royalty-free/mp3-royaltyfree/After%20Lemons.mp3', attribution: 'After Lemons by Kevin MacLeod (incompetech.com)\nLicensed under Creative Commons: By Attribution 4.0\nhttp://creativecommons.org/licenses/by/4.0/' }
+      ],
       nextId: 1,
       layout: 'single',     // single | split-h | pip
       lanes: { main: [], second: [] },  // arrays of video ids in sequence order
@@ -1910,8 +2082,95 @@
 
     // ... (Carousel omitted)
 
+
     // ═══════════════════════════════════════════════════════════════════════
-    //  AUDIO TRACKS
+    //  AUDIO LIBRARY
+    // ═══════════════════════════════════════════════════════════════════════
+    let libraryAudio = null; // For previewing library tracks
+
+    function openAudioLibrary() {
+      document.getElementById('audioLibraryModal').style.display = 'flex';
+      renderLibrary('All');
+    }
+
+    function closeAudioLibrary() {
+      document.getElementById('audioLibraryModal').style.display = 'none';
+      if (libraryAudio) { libraryAudio.pause(); libraryAudio = null; }
+    }
+
+    function renderLibrary(filter) {
+      const list = document.getElementById('libList');
+      const tracks = S.audioLibrary.filter(t => filter === 'All' || t.genre === filter);
+
+      // Update tabs
+      document.querySelectorAll('.lib-tab').forEach(t => t.classList.toggle('active', t.textContent === filter));
+
+      list.innerHTML = tracks.map((t, i) => `
+        <div class="lib-item">
+          <div class="lib-info">
+            <div class="lib-name">${esc(t.name)}</div>
+            <div class="lib-meta">${esc(t.genre)} · ${esc(t.author)}</div>
+          </div>
+          <div class="lib-actions">
+            <button class="btn btn-xs" onclick="previewLibraryTrack('${esc(t.url)}', this)">▶ Preview</button>
+            <button class="btn btn-xs btn-primary" onclick="addLibraryTrack('${esc(t.name)}', '${esc(t.url)}', ${i})">＋ Add</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function previewLibraryTrack(url, btn) {
+      if (libraryAudio && libraryAudio.src === url && !libraryAudio.paused) {
+        libraryAudio.pause();
+        btn.textContent = '▶ Preview';
+        return;
+      }
+
+      if (libraryAudio) { libraryAudio.pause(); document.querySelectorAll('.lib-actions .btn:first-child').forEach(b => b.textContent = '▶ Preview'); }
+
+      libraryAudio = new Audio(url);
+      libraryAudio.volume = 0.5;
+      libraryAudio.play().catch(e => toast('Preview failed: ' + e.message, 'err'));
+      libraryAudio.onended = () => { btn.textContent = '▶ Preview'; };
+      btn.textContent = '⏹ Stop';
+    }
+
+    async function addLibraryTrack(name, url, index) {
+      // Find track data
+      const track = S.audioLibrary.find(t => t.url === url); // simplified lookup
+      if (!track) return;
+
+      const toastId = toast('Downloading track...', 'info');
+      try {
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error('Download failed');
+        const blob = await resp.blob();
+
+        // Create audio entry
+        const u = URL.createObjectURL(blob);
+        const el = new Audio(u);
+
+        // Add attribution if needed
+        if (track.attribution) {
+          const descEl = document.getElementById('metaDesc');
+          if (descEl && !descEl.value.includes(track.name)) {
+            descEl.value = (descEl.value ? descEl.value + '\n\n' : '') + track.attribution;
+            onMetaChange();
+            toast('Attribution added to description', 'ok');
+          }
+        }
+
+        S.audios.push({ id: S.nextId++, file: new File([blob], name + '.ogg', { type: blob.type }), url: u, el, name: track.name, volume: 1 });
+        renderAudioList();
+        updateAudioBadge();
+        toast('Track added!', 'ok');
+      } catch (err) {
+        toast('Error adding track: ' + err.message, 'err');
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  AUDIO TRACKS (Local)
     // ═══════════════════════════════════════════════════════════════════════
     setupDropzone('audioDropzone', 'audioInput', files => {
       files.forEach(f => {
