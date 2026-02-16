@@ -1920,7 +1920,10 @@
             <div class="lib-tab active" onclick="renderLibrary('All')">All</div>
             <div class="lib-tab" onclick="renderLibrary('Upbeat')">Upbeat</div>
             <div class="lib-tab" onclick="renderLibrary('Lofi')">Lofi</div>
+            <div class="lib-tab" onclick="renderLibrary('Local')">📂 Local</div>
           </div>
+          <input type="file" id="localFolderInput" webkitdirectory directory multiple hidden
+            onchange="onLocalFolderSelect(this)">
           <div class="lib-list" id="libList">
             <!-- Items injected by JS -->
           </div>
@@ -1985,6 +1988,7 @@
         { name: 'Sneaky Snitch', author: 'Kevin MacLeod', genre: 'Upbeat', url: 'https://incompetech.com/music/royalty-free/mp3-royaltyfree/Sneaky%20Snitch.mp3', attribution: 'Sneaky Snitch by Kevin MacLeod (incompetech.com)\nLicensed under Creative Commons: By Attribution 4.0\nhttp://creativecommons.org/licenses/by/4.0/' },
         { name: 'After Lemons', author: 'Kevin MacLeod', genre: 'Lofi', url: 'https://incompetech.com/music/royalty-free/mp3-royaltyfree/After%20Lemons.mp3', attribution: 'After Lemons by Kevin MacLeod (incompetech.com)\nLicensed under Creative Commons: By Attribution 4.0\nhttp://creativecommons.org/licenses/by/4.0/' }
       ],
+      localAudioFiles: [],  // [File, File, ...] from local folder
       nextId: 1,
       layout: 'single',     // single | split-h | pip
       lanes: { main: [], second: [] },  // arrays of video ids in sequence order
@@ -2083,91 +2087,7 @@
     // ... (Carousel omitted)
 
 
-    // ═══════════════════════════════════════════════════════════════════════
-    //  AUDIO LIBRARY
-    // ═══════════════════════════════════════════════════════════════════════
-    let libraryAudio = null; // For previewing library tracks
 
-    function openAudioLibrary() {
-      document.getElementById('audioLibraryModal').style.display = 'flex';
-      renderLibrary('All');
-    }
-
-    function closeAudioLibrary() {
-      document.getElementById('audioLibraryModal').style.display = 'none';
-      if (libraryAudio) { libraryAudio.pause(); libraryAudio = null; }
-    }
-
-    function renderLibrary(filter) {
-      const list = document.getElementById('libList');
-      const tracks = S.audioLibrary.filter(t => filter === 'All' || t.genre === filter);
-
-      // Update tabs
-      document.querySelectorAll('.lib-tab').forEach(t => t.classList.toggle('active', t.textContent === filter));
-
-      list.innerHTML = tracks.map((t, i) => `
-        <div class="lib-item">
-          <div class="lib-info">
-            <div class="lib-name">${esc(t.name)}</div>
-            <div class="lib-meta">${esc(t.genre)} · ${esc(t.author)}</div>
-          </div>
-          <div class="lib-actions">
-            <button class="btn btn-xs" onclick="previewLibraryTrack('${esc(t.url)}', this)">▶ Preview</button>
-            <button class="btn btn-xs btn-primary" onclick="addLibraryTrack('${esc(t.name)}', '${esc(t.url)}', ${i})">＋ Add</button>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    function previewLibraryTrack(url, btn) {
-      if (libraryAudio && libraryAudio.src === url && !libraryAudio.paused) {
-        libraryAudio.pause();
-        btn.textContent = '▶ Preview';
-        return;
-      }
-
-      if (libraryAudio) { libraryAudio.pause(); document.querySelectorAll('.lib-actions .btn:first-child').forEach(b => b.textContent = '▶ Preview'); }
-
-      libraryAudio = new Audio(url);
-      libraryAudio.volume = 0.5;
-      libraryAudio.play().catch(e => toast('Preview failed: ' + e.message, 'err'));
-      libraryAudio.onended = () => { btn.textContent = '▶ Preview'; };
-      btn.textContent = '⏹ Stop';
-    }
-
-    async function addLibraryTrack(name, url, index) {
-      // Find track data
-      const track = S.audioLibrary.find(t => t.url === url); // simplified lookup
-      if (!track) return;
-
-      const toastId = toast('Downloading track...', 'info');
-      try {
-        const resp = await fetch(url);
-        if (!resp.ok) throw new Error('Download failed');
-        const blob = await resp.blob();
-
-        // Create audio entry
-        const u = URL.createObjectURL(blob);
-        const el = new Audio(u);
-
-        // Add attribution if needed
-        if (track.attribution) {
-          const descEl = document.getElementById('metaDesc');
-          if (descEl && !descEl.value.includes(track.name)) {
-            descEl.value = (descEl.value ? descEl.value + '\n\n' : '') + track.attribution;
-            onMetaChange();
-            toast('Attribution added to description', 'ok');
-          }
-        }
-
-        S.audios.push({ id: S.nextId++, file: new File([blob], name + '.ogg', { type: blob.type }), url: u, el, name: track.name, volume: 1 });
-        renderAudioList();
-        updateAudioBadge();
-        toast('Track added!', 'ok');
-      } catch (err) {
-        toast('Error adding track: ' + err.message, 'err');
-      }
-    }
 
     // ═══════════════════════════════════════════════════════════════════════
     //  AUDIO TRACKS (Local)
@@ -2601,6 +2521,139 @@
       }
 
       if (S.carouselImages.length) drawCarouselOverlay(c, t);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  AUDIO LIBRARY & LOCAL
+    // ═══════════════════════════════════════════════════════════════════════
+    let libraryAudio = null;
+
+    function openAudioLibrary() {
+      document.getElementById('audioLibraryModal').style.display = 'flex';
+      renderLibrary('All');
+    }
+
+    function closeAudioLibrary() {
+      document.getElementById('audioLibraryModal').style.display = 'none';
+      if (libraryAudio) { libraryAudio.pause(); libraryAudio = null; }
+    }
+
+    function renderLibrary(filter) {
+      const list = document.getElementById('libList');
+
+      // Update tabs
+      document.querySelectorAll('.lib-tab').forEach(t => t.classList.toggle('active', t.innerText.includes(filter) || (filter === 'All' && t.innerText === 'All')));
+
+      if (filter === 'Local') {
+        let html = `
+          <div style="text-align:center;padding:20px;border:2px dashed var(--border);border-radius:8px;margin-bottom:16px;cursor:pointer" onclick="document.getElementById('localFolderInput').click()">
+            <div style="font-size:24px;margin-bottom:8px">📂</div>
+            <div>Click to Load "Audio" Folder</div>
+            <div class="text-xs text-muted">Scans for MP3, WAV, M4A, MP4</div>
+            ${S.localAudioFiles.length ? `<div class="text-sm text-green mt-2">Loaded ${S.localAudioFiles.length} files</div>` : ''}
+          </div>
+        `;
+
+        if (S.localAudioFiles.length) {
+          html += S.localAudioFiles.map((f, i) => `
+                <div class="lib-item">
+                  <div class="lib-info">
+                    <div class="lib-name">${esc(f.name)}</div>
+                    <div class="lib-meta">${(f.size / 1024 / 1024).toFixed(1)}MB · Local File</div>
+                  </div>
+                  <div class="lib-actions">
+                    <button class="btn btn-xs btn-primary" onclick="addLocalLibraryTrack(${i})">＋ Add</button>
+                  </div>
+                </div>
+            `).join('');
+        }
+        list.innerHTML = html;
+        return;
+      }
+
+      const tracks = S.audioLibrary.filter(t => filter === 'All' || t.genre === filter);
+      list.innerHTML = tracks.map((t, i) => `
+        <div class="lib-item">
+          <div class="lib-info">
+            <div class="lib-name">${esc(t.name)}</div>
+            <div class="lib-meta">${esc(t.genre)} · ${esc(t.author)}</div>
+          </div>
+          <div class="lib-actions">
+            <button class="btn btn-xs" onclick="previewLibraryTrack('${esc(t.url)}', this)">▶ Preview</button>
+            <button class="btn btn-xs btn-primary" onclick="addLibraryTrack('${esc(t.name)}', '${esc(t.url)}', ${i})">＋ Add</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function previewLibraryTrack(url, btn) {
+      if (libraryAudio && libraryAudio.src === url && !libraryAudio.paused) {
+        libraryAudio.pause();
+        btn.textContent = '▶ Preview';
+        return;
+      }
+
+      if (libraryAudio) { libraryAudio.pause(); document.querySelectorAll('.lib-actions .btn:first-child').forEach(b => b.textContent = '▶ Preview'); }
+
+      libraryAudio = new Audio(url);
+      libraryAudio.volume = 0.5;
+      libraryAudio.play().catch(e => toast('Preview failed: ' + e.message, 'err'));
+      libraryAudio.onended = () => { btn.textContent = '▶ Preview'; };
+      btn.textContent = '⏹ Stop';
+    }
+
+    async function addLibraryTrack(name, url, index) {
+      const track = S.audioLibrary.find(t => t.url === url);
+      if (!track) return;
+
+      const toastId = toast('Downloading track...', 'info');
+      try {
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error('Download failed');
+        const blob = await resp.blob();
+
+        const u = URL.createObjectURL(blob);
+        const el = new Audio(u);
+
+        if (track.attribution) {
+          const descEl = document.getElementById('metaDesc');
+          if (descEl && !descEl.value.includes(track.name)) {
+            descEl.value = (descEl.value ? descEl.value + '\n\n' : '') + track.attribution;
+            onMetaChange();
+            toast('Attribution added to description', 'ok');
+          }
+        }
+
+        S.audios.push({ id: S.nextId++, file: new File([blob], name + '.ogg', { type: blob.type }), url: u, el, name: track.name, volume: 1 });
+        renderAudioList();
+        updateAudioBadge();
+        toast('Track added!', 'ok');
+      } catch (err) {
+        toast('Error adding track: ' + err.message, 'err');
+      }
+    }
+
+    function onLocalFolderSelect(input) {
+      if (!input.files || !input.files.length) return;
+      const files = Array.from(input.files).filter(f => f.type.startsWith('audio/') || f.type === 'video/mp4' || f.name.endsWith('.mp3') || f.name.endsWith('.wav') || f.name.endsWith('.m4a'));
+      if (files.length === 0) {
+        toast('No audio files found in folder', 'err');
+        return;
+      }
+      S.localAudioFiles = files;
+      renderLibrary('Local');
+      toast(`Loaded ${files.length} local files`, 'ok');
+    }
+
+    function addLocalLibraryTrack(index) {
+      const file = S.localAudioFiles[index];
+      if (!file) return;
+      const u = URL.createObjectURL(file);
+      const el = new Audio(u);
+      S.audios.push({ id: S.nextId++, file, url: u, el, name: file.name, volume: 1 });
+      renderAudioList();
+      updateAudioBadge();
+      toast('Local track added!', 'ok');
     }
 
     function seekVideoTo(el, localTime) {
