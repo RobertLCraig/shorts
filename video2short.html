@@ -1818,62 +1818,32 @@
             </div>
           </div>
           <div class="assets-panel">
-            <div class="panel-card">
-              <div class="panel-header">🖼 Thumbnail</div>
-              <div class="panel-body">
-                <div class="dropzone thumb-dropzone" id="thumbDropzone">
-                  <div class="dropzone-content" id="thumbPlaceholder">
-                    <div class="dropzone-icon">📷</div>
-                    <div class="dropzone-text">Drop thumbnail</div>
-                    <div class="dropzone-hint">PNG, JPG</div>
-                  </div><img id="thumbImg" style="display:none"><input type="file" id="thumbInput" accept="image/*">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div class="panel-card">
+                <div class="panel-header">🖼 Thumbnail</div>
+                <div class="panel-body" style="padding:12px">
+                  <div class="dropzone thumb-dropzone" id="thumbDropzone" style="height:96px;display:flex;align-items:center;justify-content:center">
+                    <div class="dropzone-content" id="thumbPlaceholder">
+                      <div class="dropzone-icon">📷</div>
+                      <div class="dropzone-text">Drop thumbnail</div>
+                      <div class="dropzone-hint">PNG, JPG</div>
+                    </div>
+                    <img id="thumbImg" style="display:none;max-height:88px;max-width:100%">
+                    <input type="file" id="thumbInput" accept="image/*">
+                  </div>
+                  <div style="display:flex;gap:6px;margin-top:8px"><button class="btn btn-sm" onclick="autoThumb()" style="flex:1">📸 Grab Frame</button><button class="btn btn-sm btn-red" onclick="clearThumb()" id="clearThumbBtn" style="display:none">✕</button></div>
                 </div>
-                <div style="display:flex;gap:6px;margin-top:8px"><button class="btn btn-sm" onclick="autoThumb()"
-                    style="flex:1">📸 Grab Frame</button><button class="btn btn-sm btn-red" onclick="clearThumb()"
-                    id="clearThumbBtn" style="display:none">✕</button></div>
               </div>
-            </div>
-            <div class="panel-card">
-              <div class="panel-header">🎠 Carousel Overlay <span class="badge badge-amber"
-                  id="carouselBadge">Off</span></div>
-              <div class="panel-body">
-                <div class="dropzone" id="carouselDropzone">
-                  <div class="dropzone-icon">🖼</div>
-                  <div class="dropzone-text">Drop product images</div>
-                  <div class="dropzone-hint">Renders, photos</div><input type="file" id="carouselInput" accept="image/*"
-                    multiple>
-                </div>
-                <div class="carousel-list" id="carouselList"></div>
-                <div class="carousel-settings" id="carouselSettings" style="display:none">
-                  <div class="field">
-                    <div class="field-label">Position</div><select id="carouselPos" onchange="updateSettings()">
-                      <option value="bottom-right">Bot Right</option>
-                      <option value="bottom-left">Bot Left</option>
-                      <option value="top-right">Top Right</option>
-                      <option value="top-left">Top Left</option>
-                    </select>
+              <div class="panel-card">
+                <div class="panel-header">🎠 Carousel Overlay <span class="badge badge-amber" id="carouselBadge">Off</span></div>
+                <div class="panel-body" style="padding:12px">
+                  <div class="dropzone" id="carouselDropzone" style="height:96px;display:flex;align-items:center;justify-content:center">
+                    <div class="dropzone-icon">🖼</div>
+                    <div class="dropzone-text">Drop product images</div>
+                    <div class="dropzone-hint">Renders, photos</div>
+                    <input type="file" id="carouselInput" accept="image/*" multiple>
                   </div>
-                  <div class="field">
-                    <div class="field-label">Rotate</div><select id="carouselInterval" onchange="updateSettings()">
-                      <option value="2">2s</option>
-                      <option value="3" selected>3s</option>
-                      <option value="5">5s</option>
-                    </select>
-                  </div>
-                  <div class="field">
-                    <div class="field-label">Size</div><select id="carouselSize" onchange="updateSettings()">
-                      <option value="small">S</option>
-                      <option value="medium" selected>M</option>
-                      <option value="large">L</option>
-                    </select>
-                  </div>
-                  <div class="field">
-                    <div class="field-label">Shape</div><select id="carouselShape" onchange="updateSettings()">
-                      <option value="rounded">Rounded</option>
-                      <option value="circle">Circle</option>
-                      <option value="square">Square</option>
-                    </select>
-                  </div>
+                  <div class="carousel-list" id="carouselList" style="margin-top:8px"></div>
                 </div>
               </div>
             </div>
@@ -1899,34 +1869,39 @@
             <div class="panel-card">
               <div class="panel-header">Intro & Outro <span class="badge badge-amber" id="ioBadge">Off</span></div>
               <div class="panel-body">
-                <!-- Intro -->
-                <div class="io-item">
-                  <div class="io-label">Intro Image</div>
-                  <div class="io-controls">
-                    <div class="io-preview" id="introPreview" onclick="document.getElementById('introInput').click()">
-                      <span id="introPlaceholder">+</span>
-                      <img id="introImg" style="display:none">
+                <div style="display:grid;grid-template-columns:1fr;gap:10px">
+                  <div style="display:flex;align-items:center;gap:10px">
+                    <div style="flex:0 0 110px">
+                      <div class="dropzone" id="introDropzone" style="height:78px;display:flex;align-items:center;justify-content:center;padding:6px">
+                        <div class="dropzone-icon">📷</div>
+                        <div class="dropzone-text">Intro image</div>
+                        <input type="file" id="introInput" accept="image/*" hidden onchange="handleIO(this,'intro')">
+                      </div>
                     </div>
-                    <input type="file" id="introInput" accept="image/*" hidden onchange="handleIO(this, 'intro')">
-                    <div class="io-dur">
-                      <input type="number" id="introDur" value="3" min="1" max="10" onchange="updateIO('intro')"> s
+                    <div style="flex:1;display:flex;align-items:center;gap:8px">
+                      <div style="display:flex;flex-direction:column">
+                        <div style="font-size:13px;color:var(--text-3)">Duration</div>
+                        <input type="number" id="introDur" value="3" min="1" max="10" onchange="updateIO('intro')" style="width:70px;padding:6px;margin-top:6px">
+                      </div>
+                      <div style="margin-left:auto"><button class="btn btn-xs btn-red" onclick="clearIO('intro')">Remove</button></div>
                     </div>
-                    <button class="btn btn-xs btn-red" onclick="clearIO('intro')">×</button>
                   </div>
-                </div>
-                <!-- Outro -->
-                <div class="io-item" style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--border)">
-                  <div class="io-label">Outro Image</div>
-                  <div class="io-controls">
-                    <div class="io-preview" id="outroPreview" onclick="document.getElementById('outroInput').click()">
-                      <span id="outroPlaceholder">+</span>
-                      <img id="outroImg" style="display:none">
+
+                  <div style="display:flex;align-items:center;gap:10px">
+                    <div style="flex:0 0 110px">
+                      <div class="dropzone" id="outroDropzone" style="height:78px;display:flex;align-items:center;justify-content:center;padding:6px">
+                        <div class="dropzone-icon">📷</div>
+                        <div class="dropzone-text">Outro image</div>
+                        <input type="file" id="outroInput" accept="image/*" hidden onchange="handleIO(this,'outro')">
+                      </div>
                     </div>
-                    <input type="file" id="outroInput" accept="image/*" hidden onchange="handleIO(this, 'outro')">
-                    <div class="io-dur">
-                      <input type="number" id="outroDur" value="3" min="1" max="10" onchange="updateIO('outro')"> s
+                    <div style="flex:1;display:flex;align-items:center;gap:8px">
+                      <div style="display:flex;flex-direction:column">
+                        <div style="font-size:13px;color:var(--text-3)">Duration</div>
+                        <input type="number" id="outroDur" value="3" min="1" max="10" onchange="updateIO('outro')" style="width:70px;padding:6px;margin-top:6px">
+                      </div>
+                      <div style="margin-left:auto"><button class="btn btn-xs btn-red" onclick="clearIO('outro')">Remove</button></div>
                     </div>
-                    <button class="btn btn-xs btn-red" onclick="clearIO('outro')">×</button>
                   </div>
                 </div>
               </div>
@@ -2863,6 +2838,9 @@
     function clearThumb() { if (S.thumbnail?.url) URL.revokeObjectURL(S.thumbnail.url); S.thumbnail = null; document.getElementById('thumbImg').style.display = 'none'; document.getElementById('thumbPlaceholder').style.display = 'block'; document.getElementById('thumbDropzone').classList.remove('has-image'); document.getElementById('clearThumbBtn').style.display = 'none' }
 
     setupDropzone('carouselDropzone', 'carouselInput', files => { files.forEach(f => { if (!f.type.startsWith('image/')) return; const u = URL.createObjectURL(f); const img = new Image(); img.onload = () => { S.carouselImages.push({ url: u, name: f.name, img }); renderCarouselList(); updateCarouselBadge() }; img.src = u }); if (files.length) toast(`Added ${files.length} image${files.length > 1 ? 's' : ''}`, 'ok') });
+    // Intro/Outro dropzones
+    setupDropzone('introDropzone', 'introInput', files => { const f = files[0]; if (!f || !f.type.startsWith('image/')) return; const inp = document.getElementById('introInput'); const dt = new DataTransfer(); dt.items.add(f); inp.files = dt.files; handleIO(inp, 'intro'); });
+    setupDropzone('outroDropzone', 'outroInput', files => { const f = files[0]; if (!f || !f.type.startsWith('image/')) return; const inp = document.getElementById('outroInput'); const dt = new DataTransfer(); dt.items.add(f); inp.files = dt.files; handleIO(inp, 'outro'); });
     function renderCarouselList() { document.getElementById('carouselList').innerHTML = S.carouselImages.map((im, i) => `<div class="carousel-item"><img src="${im.url}"><span class="name">${esc(im.name)}</span><span class="remove-img" onclick="removeCarouselImage(${i})">×</span></div>`).join(''); document.getElementById('carouselSettings').style.display = S.carouselImages.length ? 'grid' : 'none' }
     function removeCarouselImage(i) { URL.revokeObjectURL(S.carouselImages[i].url); S.carouselImages.splice(i, 1); S.carouselCurrentIdx = 0; renderCarouselList(); updateCarouselBadge() }
     function updateCarouselBadge() { const b = document.getElementById('carouselBadge'); if (S.carouselImages.length) { b.textContent = `${S.carouselImages.length} img`; b.className = 'badge badge-green' } else { b.textContent = 'Off'; b.className = 'badge badge-amber' } }
@@ -2882,7 +2860,8 @@
       const u = URL.createObjectURL(f);
       const imgEl = document.getElementById(which + 'Img');
       const placeholder = document.getElementById(which + 'Placeholder');
-      imgEl.src = u; imgEl.style.display = 'block'; if (placeholder) placeholder.style.display = 'none';
+      if (imgEl) { imgEl.src = u; imgEl.style.display = 'block'; }
+      if (placeholder) placeholder.style.display = 'none';
       S[which].file = f; S[which].url = u; S[which].img = new Image(); S[which].img.onload = () => { renderAll(); }; S[which].img.src = u;
       const durEl = document.getElementById(which + 'Dur'); if (durEl) { S[which].duration = Number(durEl.value) || S[which].duration; }
       updateIOBadge();
