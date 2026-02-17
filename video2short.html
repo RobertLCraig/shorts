@@ -1895,6 +1895,43 @@
               </div>
             </div>
 
+            <!-- Intro / Outro Panel -->
+            <div class="panel-card">
+              <div class="panel-header">Intro & Outro <span class="badge badge-amber" id="ioBadge">Off</span></div>
+              <div class="panel-body">
+                <!-- Intro -->
+                <div class="io-item">
+                  <div class="io-label">Intro Image</div>
+                  <div class="io-controls">
+                    <div class="io-preview" id="introPreview" onclick="document.getElementById('introInput').click()">
+                      <span id="introPlaceholder">+</span>
+                      <img id="introImg" style="display:none">
+                    </div>
+                    <input type="file" id="introInput" accept="image/*" hidden onchange="handleIO(this, 'intro')">
+                    <div class="io-dur">
+                      <input type="number" id="introDur" value="3" min="1" max="10" onchange="updateIO('intro')"> s
+                    </div>
+                    <button class="btn btn-xs btn-red" onclick="clearIO('intro')">×</button>
+                  </div>
+                </div>
+                <!-- Outro -->
+                <div class="io-item" style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--border)">
+                  <div class="io-label">Outro Image</div>
+                  <div class="io-controls">
+                    <div class="io-preview" id="outroPreview" onclick="document.getElementById('outroInput').click()">
+                      <span id="outroPlaceholder">+</span>
+                      <img id="outroImg" style="display:none">
+                    </div>
+                    <input type="file" id="outroInput" accept="image/*" hidden onchange="handleIO(this, 'outro')">
+                    <div class="io-dur">
+                      <input type="number" id="outroDur" value="3" min="1" max="10" onchange="updateIO('outro')"> s
+                    </div>
+                    <button class="btn btn-xs btn-red" onclick="clearIO('outro')">×</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <!-- Editor Actions -->
             <div style="margin-top:20px;display:flex;flex-direction:column;gap:8px">
               <button class="btn btn-primary" onclick="processAndExport()"
@@ -1912,7 +1949,7 @@
     <div id="audioLibraryModal" class="modal-overlay" style="display:none">
       <div class="modal-box" style="max-width:600px">
         <div class="modal-header">
-          <h3>Online Audio Library</h3>
+          <h3>Audio Library</h3>
           <button class="btn-close" onclick="closeAudioLibrary()">×</button>
         </div>
         <div class="modal-body">
@@ -1920,15 +1957,13 @@
             <div class="lib-tab active" onclick="renderLibrary('All')">All</div>
             <div class="lib-tab" onclick="renderLibrary('Upbeat')">Upbeat</div>
             <div class="lib-tab" onclick="renderLibrary('Lofi')">Lofi</div>
-            <div class="lib-tab" onclick="renderLibrary('Local')">📂 Local</div>
+            <div class="lib-tab" onclick="renderLibrary('Project')">📂 Project</div>
           </div>
-          <input type="file" id="localFolderInput" webkitdirectory directory multiple hidden
-            onchange="onLocalFolderSelect(this)">
           <div class="lib-list" id="libList">
             <!-- Items injected by JS -->
           </div>
-          <p class="text-sm text-muted mt-4">Music by Kevin MacLeod (incompetech.com). Licensed under Creative Commons:
-            By Attribution 4.0. Attribution will be automatically added to your video description.</p>
+          <p class="text-sm text-muted mt-4" id="libFooter">Music by Kevin MacLeod (incompetech.com). Licensed under
+            Creative Commons: By Attribution 4.0. Attribution will be automatically added to your video description.</p>
         </div>
       </div>
     </div>
@@ -1977,6 +2012,8 @@
     const S = {
       videos: [],           // [{ id, file, url, el, name, duration, w, h, fileName }]
       audios: [],           // [{ id, file, url, el, name, volume }]
+      intro: { file: null, url: null, duration: 3, img: null },
+      outro: { file: null, url: null, duration: 3, img: null },
       // Curated Library (Kevin MacLeod - Incompetech)
       // Using https links if available, otherwise might need proxy or different host.
       // Verified Monkeys Spinning Monkeys is on incompetech.com
@@ -1988,7 +2025,10 @@
         { name: 'Sneaky Snitch', author: 'Kevin MacLeod', genre: 'Upbeat', url: 'https://incompetech.com/music/royalty-free/mp3-royaltyfree/Sneaky%20Snitch.mp3', attribution: 'Sneaky Snitch by Kevin MacLeod (incompetech.com)\nLicensed under Creative Commons: By Attribution 4.0\nhttp://creativecommons.org/licenses/by/4.0/' },
         { name: 'After Lemons', author: 'Kevin MacLeod', genre: 'Lofi', url: 'https://incompetech.com/music/royalty-free/mp3-royaltyfree/After%20Lemons.mp3', attribution: 'After Lemons by Kevin MacLeod (incompetech.com)\nLicensed under Creative Commons: By Attribution 4.0\nhttp://creativecommons.org/licenses/by/4.0/' }
       ],
-      localAudioFiles: [],  // [File, File, ...] from local folder
+      projectAudio: [
+        { name: 'ForwardAssemblyAIMusic1.mp4', url: 'audio/ForwardAssemblyAIMusic1.mp4' },
+        { name: 'ForwardAssemblyAIMusic2.mp4', url: 'audio/ForwardAssemblyAIMusic2.mp4' }
+      ],
       nextId: 1,
       layout: 'single',     // single | split-h | pip
       lanes: { main: [], second: [] },  // arrays of video ids in sequence order
@@ -2538,36 +2578,39 @@
       if (libraryAudio) { libraryAudio.pause(); libraryAudio = null; }
     }
 
+
+
     function renderLibrary(filter) {
       const list = document.getElementById('libList');
+      const footer = document.getElementById('libFooter');
 
       // Update tabs
       document.querySelectorAll('.lib-tab').forEach(t => t.classList.toggle('active', t.innerText.includes(filter) || (filter === 'All' && t.innerText === 'All')));
 
-      if (filter === 'Local') {
-        let html = `
-          <div style="text-align:center;padding:20px;border:2px dashed var(--border);border-radius:8px;margin-bottom:16px;cursor:pointer" onclick="document.getElementById('localFolderInput').click()">
-            <div style="font-size:24px;margin-bottom:8px">📂</div>
-            <div>Click to Load "Audio" Folder</div>
-            <div class="text-xs text-muted">Scans for MP3, WAV, M4A, MP4</div>
-            ${S.localAudioFiles.length ? `<div class="text-sm text-green mt-2">Loaded ${S.localAudioFiles.length} files</div>` : ''}
-          </div>
-        `;
+      // Update Footer
+      if (filter === 'Project') {
+        footer.style.display = 'none';
+      } else {
+        footer.style.display = 'block';
+      }
 
-        if (S.localAudioFiles.length) {
-          html += S.localAudioFiles.map((f, i) => `
+      if (filter === 'Project') {
+        if (S.projectAudio.length) {
+          list.innerHTML = S.projectAudio.map((f, i) => `
                 <div class="lib-item">
                   <div class="lib-info">
                     <div class="lib-name">${esc(f.name)}</div>
-                    <div class="lib-meta">${(f.size / 1024 / 1024).toFixed(1)}MB · Local File</div>
+                    <div class="lib-meta">Project File</div>
                   </div>
                   <div class="lib-actions">
-                    <button class="btn btn-xs btn-primary" onclick="addLocalLibraryTrack(${i})">＋ Add</button>
+                    <button class="btn btn-xs" onclick="previewLibraryTrack('${esc(f.url)}', this)">▶ Preview</button>
+                    <button class="btn btn-xs btn-primary" onclick="addProjectAudio(${i})">＋ Add</button>
                   </div>
                 </div>
             `).join('');
+        } else {
+          list.innerHTML = `<div style="text-align:center;padding:20px;color:rgba(255,255,255,0.5)">No files found in audio/ folder</div>`;
         }
-        list.innerHTML = html;
         return;
       }
 
@@ -2633,27 +2676,30 @@
       }
     }
 
-    function onLocalFolderSelect(input) {
-      if (!input.files || !input.files.length) return;
-      const files = Array.from(input.files).filter(f => f.type.startsWith('audio/') || f.type === 'video/mp4' || f.name.endsWith('.mp3') || f.name.endsWith('.wav') || f.name.endsWith('.m4a'));
-      if (files.length === 0) {
-        toast('No audio files found in folder', 'err');
-        return;
-      }
-      S.localAudioFiles = files;
-      renderLibrary('Local');
-      toast(`Loaded ${files.length} local files`, 'ok');
-    }
+    async function addProjectAudio(index) {
+      const item = S.projectAudio[index];
+      if (!item) return;
 
-    function addLocalLibraryTrack(index) {
-      const file = S.localAudioFiles[index];
-      if (!file) return;
-      const u = URL.createObjectURL(file);
-      const el = new Audio(u);
-      S.audios.push({ id: S.nextId++, file, url: u, el, name: file.name, volume: 1 });
+      const toastId = toast('Loading project file...', 'info');
+      try {
+        // Try fetching as blob first (best for export consistency)
+        const resp = await fetch(item.url);
+        if (!resp.ok) throw new Error('Fetch failed');
+        const blob = await resp.blob();
+        const u = URL.createObjectURL(blob);
+        const el = new Audio(u);
+        S.audios.push({ id: S.nextId++, file: new File([blob], item.name, { type: blob.type }), url: u, el, name: item.name, volume: 1 });
+      } catch (err) {
+        // Fallback: direct URL usage (for local file:// protocol or CORS issues)
+        console.warn('Fetch failed, falling back to direct URL', err);
+        const u = item.url;
+        const el = new Audio(u);
+        S.audios.push({ id: S.nextId++, file: null, url: u, el, name: item.name, volume: 1 });
+      }
+
       renderAudioList();
       updateAudioBadge();
-      toast('Local track added!', 'ok');
+      toast('Project track added!', 'ok');
     }
 
     function seekVideoTo(el, localTime) {
