@@ -2450,7 +2450,10 @@
     function computeMontageDuration() {
       const mainDur = laneDuration('main');
       const secondDur = laneDuration('second');
-      S.montageDuration = S.layout === 'single' ? mainDur : Math.max(mainDur, secondDur);
+      const base = S.layout === 'single' ? mainDur : Math.max(mainDur, secondDur);
+      const introDur = (S.intro && S.intro.duration) ? Number(S.intro.duration) : 0;
+      const outroDur = (S.outro && S.outro.duration) ? Number(S.outro.duration) : 0;
+      S.montageDuration = introDur + base + outroDur;
       return S.montageDuration;
     }
 
@@ -2528,7 +2531,28 @@
     function drawFrame(c, t, isExport) {
       c.fillStyle = '#000'; c.fillRect(0, 0, W, H);
 
-      const r1 = resolveTimeInLane('main', t);
+      // Intro
+      const introDur = (S.intro && S.intro.duration) ? Number(S.intro.duration) : 0;
+      const outroDur = (S.outro && S.outro.duration) ? Number(S.outro.duration) : 0;
+      const mainDur = (S.layout === 'single') ? laneDuration('main') : Math.max(laneDuration('main'), laneDuration('second'));
+
+      if (introDur > 0 && t < introDur && S.intro && S.intro.img) {
+        // Draw intro image at full canvas size (contain)
+        const im = S.intro.img;
+        const iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height;
+        if (iw && ih) {
+          const s = Math.max(W / iw, H / ih);
+          const dw = iw * s, dh = ih * s;
+          c.drawImage(im, (W - dw) / 2, (H - dh) / 2, dw, dh);
+        }
+        if (S.carouselImages.length) drawCarouselOverlay(c, t);
+        return;
+      }
+
+      // Adjust time to account for intro
+      const tMain = Math.max(0, t - introDur);
+
+      const r1 = resolveTimeInLane('main', tMain);
       if (!isExport && r1) seekVideoTo(r1.el, r1.localTime);
 
       if (S.layout === 'single') {
@@ -2537,12 +2561,12 @@
         const gap = 6, halfH = (H - gap) / 2;
         if (r1) drawVideoSlice(c, r1.el, 0, 0, W, halfH, isExport);
         c.fillStyle = '#000'; c.fillRect(0, halfH, W, gap);
-        const r2 = resolveTimeInLane('second', t);
+        const r2 = resolveTimeInLane('second', tMain);
         if (!isExport && r2) seekVideoTo(r2.el, r2.localTime);
         if (r2) drawVideoSlice(c, r2.el, 0, halfH + gap, W, halfH, isExport);
       } else if (S.layout === 'pip') {
         if (r1) drawVideoSlice(c, r1.el, 0, 0, W, H, isExport);
-        const r2 = resolveTimeInLane('second', t);
+        const r2 = resolveTimeInLane('second', tMain);
         if (!isExport && r2) seekVideoTo(r2.el, r2.localTime);
         if (r2) {
           const pw = 320, ph = 180, px = W - pw - 40, py = H - ph - 120;
@@ -2557,6 +2581,18 @@
           c.restore();
           c.strokeStyle = 'rgba(255,255,255,.15)'; c.lineWidth = 2;
           c.beginPath(); roundedRect(c, px, py, pw, ph, 12); c.stroke();
+        }
+      }
+
+      // Outro (draw on top when within outro region)
+      const total = introDur + mainDur + outroDur;
+      if (outroDur > 0 && t >= (total - outroDur) && S.outro && S.outro.img) {
+        const im = S.outro.img;
+        const iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height;
+        if (iw && ih) {
+          const s = Math.max(W / iw, H / ih);
+          const dw = iw * s, dh = ih * s;
+          c.drawImage(im, (W - dw) / 2, (H - dh) / 2, dw, dh);
         }
       }
 
@@ -2830,6 +2866,52 @@
     function renderCarouselList() { document.getElementById('carouselList').innerHTML = S.carouselImages.map((im, i) => `<div class="carousel-item"><img src="${im.url}"><span class="name">${esc(im.name)}</span><span class="remove-img" onclick="removeCarouselImage(${i})">×</span></div>`).join(''); document.getElementById('carouselSettings').style.display = S.carouselImages.length ? 'grid' : 'none' }
     function removeCarouselImage(i) { URL.revokeObjectURL(S.carouselImages[i].url); S.carouselImages.splice(i, 1); S.carouselCurrentIdx = 0; renderCarouselList(); updateCarouselBadge() }
     function updateCarouselBadge() { const b = document.getElementById('carouselBadge'); if (S.carouselImages.length) { b.textContent = `${S.carouselImages.length} img`; b.className = 'badge badge-green' } else { b.textContent = 'Off'; b.className = 'badge badge-amber' } }
+
+    // Intro/Outro handlers (file attach, update, clear) and simple drag/drop on preview boxes
+    function updateIOBadge() {
+      const b = document.getElementById('ioBadge');
+      const on = (S.intro && S.intro.url) || (S.outro && S.outro.url);
+      if (on) { b.textContent = 'On'; b.className = 'badge badge-green' } else { b.textContent = 'Off'; b.className = 'badge badge-amber' }
+    }
+
+    function handleIO(inputEl, which) {
+      const f = inputEl.files && inputEl.files[0];
+      if (!f || !f.type.startsWith('image/')) return;
+      // revoke previous
+      if (S[which] && S[which].url) URL.revokeObjectURL(S[which].url);
+      const u = URL.createObjectURL(f);
+      const imgEl = document.getElementById(which + 'Img');
+      const placeholder = document.getElementById(which + 'Placeholder');
+      imgEl.src = u; imgEl.style.display = 'block'; if (placeholder) placeholder.style.display = 'none';
+      S[which].file = f; S[which].url = u; S[which].img = new Image(); S[which].img.onload = () => { renderAll(); }; S[which].img.src = u;
+      const durEl = document.getElementById(which + 'Dur'); if (durEl) { S[which].duration = Number(durEl.value) || S[which].duration; }
+      updateIOBadge();
+    }
+
+    function updateIO(which) {
+      const durEl = document.getElementById(which + 'Dur'); if (!durEl) return; S[which].duration = Number(durEl.value) || S[which].duration; renderAll(); updateIOBadge();
+    }
+
+    function clearIO(which) {
+      const imgEl = document.getElementById(which + 'Img'); const placeholder = document.getElementById(which + 'Placeholder');
+      if (S[which] && S[which].url) URL.revokeObjectURL(S[which].url);
+      S[which].file = null; S[which].url = null; S[which].img = null; S[which].duration = 3;
+      if (imgEl) { imgEl.src = ''; imgEl.style.display = 'none'; }
+      if (placeholder) { placeholder.style.display = 'block'; }
+      const durEl = document.getElementById(which + 'Dur'); if (durEl) durEl.value = 3;
+      updateIOBadge(); renderAll();
+    }
+
+    // allow dragging images onto the smaller previews
+    ['introPreview','outroPreview'].forEach(pid => {
+      const el = document.getElementById(pid);
+      if (!el) return;
+      el.addEventListener('dragover', e => { e.preventDefault(); el.classList.add('dragover'); });
+      el.addEventListener('dragleave', () => el.classList.remove('dragover'));
+      el.addEventListener('drop', e => {
+        e.preventDefault(); el.classList.remove('dragover'); const f = e.dataTransfer.files && e.dataTransfer.files[0]; if (!f) return; const which = pid.startsWith('intro') ? 'intro' : 'outro'; if (!f.type.startsWith('image/')) return; const input = document.getElementById(which + 'Input'); const dt = new DataTransfer(); dt.items.add(f); input.files = dt.files; handleIO(input, which);
+      });
+    });
 
     // ═══════════════════════════════════════════════════════════════════════
     //  PROCESSING
