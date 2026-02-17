@@ -1847,7 +1847,26 @@
                 </div>
               </div>
             </div>
-
+ 
+                <!-- Image Editor Modal (Intro/Outro) -->
+                <div id="ioEditorModal" class="modal-overlay" style="display:none">
+                  <div class="modal-box" style="max-width:760px">
+                    <div class="modal-header">
+                      <h3>Image Editor</h3>
+                      <button class="btn-close" onclick="closeIOEditor()">×</button>
+                    </div>
+                    <div class="modal-body" style="display:flex;flex-direction:column;gap:10px;align-items:center">
+                      <canvas id="ioEditorCanvas" width="720" height="1280" style="width:360px;height:640px;border-radius:8px;background:#000"></canvas>
+                      <div style="width:100%;display:flex;gap:8px;align-items:center">
+                        <button class="btn btn-sm" onclick="ioEditorReset()">Reset</button>
+                        <div style="flex:1"></div>
+                        <button class="btn btn-sm btn-ghost" onclick="closeIOEditor()">Cancel</button>
+                        <button class="btn btn-primary" onclick="ioEditorSave()">Save</button>
+                      </div>
+                      <div style="font-size:12px;color:var(--text-3)">Drag to move, scroll to zoom. Preview shows final aspect ratio.</div>
+                    </div>
+                  </div>
+                </div>
             <!-- Audio Tracks Panel -->
             <div class="panel-card">
               <div class="panel-header">
@@ -1883,7 +1902,7 @@
                         <div style="font-size:13px;color:var(--text-3)">Duration</div>
                         <input type="number" id="introDur" value="3" min="1" max="10" onchange="updateIO('intro')" style="width:70px;padding:6px;margin-top:6px">
                       </div>
-                      <div style="margin-left:auto"><button class="btn btn-xs btn-red" onclick="clearIO('intro')">Remove</button></div>
+                      <div style="margin-left:auto"><button class="btn btn-xs" onclick="openIOEditor('intro')">Edit</button>&nbsp;<button class="btn btn-xs btn-red" onclick="clearIO('intro')">Remove</button></div>
                     </div>
                   </div>
 
@@ -1900,7 +1919,7 @@
                         <div style="font-size:13px;color:var(--text-3)">Duration</div>
                         <input type="number" id="outroDur" value="3" min="1" max="10" onchange="updateIO('outro')" style="width:70px;padding:6px;margin-top:6px">
                       </div>
-                      <div style="margin-left:auto"><button class="btn btn-xs btn-red" onclick="clearIO('outro')">Remove</button></div>
+                      <div style="margin-left:auto"><button class="btn btn-xs" onclick="openIOEditor('outro')">Edit</button>&nbsp;<button class="btn btn-xs btn-red" onclick="clearIO('outro')">Remove</button></div>
                     </div>
                   </div>
                 </div>
@@ -2512,13 +2531,23 @@
       const mainDur = (S.layout === 'single') ? laneDuration('main') : Math.max(laneDuration('main'), laneDuration('second'));
 
       if (introDur > 0 && t < introDur && S.intro && S.intro.img) {
-        // Draw intro image at full canvas size (contain)
+        // Draw intro image (use saved editor transform if present)
         const im = S.intro.img;
         const iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height;
         if (iw && ih) {
-          const s = Math.max(W / iw, H / ih);
-          const dw = iw * s, dh = ih * s;
-          c.drawImage(im, (W - dw) / 2, (H - dh) / 2, dw, dh);
+          const e = S.intro.editor;
+          if (e) {
+            const base = e.baseScale || Math.max(W / iw, H / ih);
+            const finalScale = base * (e.scale || 1);
+            const dw = iw * finalScale, dh = ih * finalScale;
+            const dx = (typeof e.x === 'number') ? e.x : (W - dw) / 2;
+            const dy = (typeof e.y === 'number') ? e.y : (H - dh) / 2;
+            c.drawImage(im, dx, dy, dw, dh);
+          } else {
+            const s = Math.max(W / iw, H / ih);
+            const dw = iw * s, dh = ih * s;
+            c.drawImage(im, (W - dw) / 2, (H - dh) / 2, dw, dh);
+          }
         }
         if (S.carouselImages.length) drawCarouselOverlay(c, t);
         return;
@@ -2565,9 +2594,19 @@
         const im = S.outro.img;
         const iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height;
         if (iw && ih) {
-          const s = Math.max(W / iw, H / ih);
-          const dw = iw * s, dh = ih * s;
-          c.drawImage(im, (W - dw) / 2, (H - dh) / 2, dw, dh);
+          const e = S.outro.editor;
+          if (e) {
+            const base = e.baseScale || Math.max(W / iw, H / ih);
+            const finalScale = base * (e.scale || 1);
+            const dw = iw * finalScale, dh = ih * finalScale;
+            const dx = (typeof e.x === 'number') ? e.x : (W - dw) / 2;
+            const dy = (typeof e.y === 'number') ? e.y : (H - dh) / 2;
+            c.drawImage(im, dx, dy, dw, dh);
+          } else {
+            const s = Math.max(W / iw, H / ih);
+            const dw = iw * s, dh = ih * s;
+            c.drawImage(im, (W - dw) / 2, (H - dh) / 2, dw, dh);
+          }
         }
       }
 
@@ -2881,16 +2920,58 @@
       updateIOBadge(); renderAll();
     }
 
-    // allow dragging images onto the smaller previews
-    ['introPreview','outroPreview'].forEach(pid => {
-      const el = document.getElementById(pid);
-      if (!el) return;
-      el.addEventListener('dragover', e => { e.preventDefault(); el.classList.add('dragover'); });
-      el.addEventListener('dragleave', () => el.classList.remove('dragover'));
-      el.addEventListener('drop', e => {
-        e.preventDefault(); el.classList.remove('dragover'); const f = e.dataTransfer.files && e.dataTransfer.files[0]; if (!f) return; const which = pid.startsWith('intro') ? 'intro' : 'outro'; if (!f.type.startsWith('image/')) return; const input = document.getElementById(which + 'Input'); const dt = new DataTransfer(); dt.items.add(f); input.files = dt.files; handleIO(input, which);
-      });
-    });
+    // Image editor state and handlers for intro/outro
+    const ioEditor = { which: null, canvas: null, ctx: null, img: null, state: { x: 0, y: 0, scale: 1, iw: 0, ih: 0 }, dragging: false, lastX: 0, lastY: 0, baseScale: 1 };
+
+    function openIOEditor(which) {
+      if (!S[which] || !S[which].url) { toast('No image to edit', 'err'); return; }
+      ioEditor.which = which;
+      const modal = document.getElementById('ioEditorModal'); modal.style.display = 'flex';
+      ioEditor.canvas = document.getElementById('ioEditorCanvas'); ioEditor.ctx = ioEditor.canvas.getContext('2d');
+      ioEditor.img = new Image();
+      ioEditor.img.onload = () => {
+        const cw = ioEditor.canvas.width, ch = ioEditor.canvas.height;
+        const iw = ioEditor.img.naturalWidth || ioEditor.img.width, ih = ioEditor.img.naturalHeight || ioEditor.img.height;
+        ioEditor.baseScale = Math.max(cw / iw, ch / ih);
+        ioEditor.state.iw = iw; ioEditor.state.ih = ih;
+        const saved = S[which].editor || null;
+        ioEditor.state.scale = saved?.scale || 1;
+        ioEditor.state.x = (typeof saved?.x === 'number') ? saved.x : (cw - iw * ioEditor.baseScale * ioEditor.state.scale) / 2;
+        ioEditor.state.y = (typeof saved?.y === 'number') ? saved.y : (ch - ih * ioEditor.baseScale * ioEditor.state.scale) / 2;
+        drawEditor();
+      };
+      ioEditor.img.src = S[which].url;
+
+      // pointer events
+      ioEditor.canvas.onpointerdown = (e) => { ioEditor.dragging = true; ioEditor.canvas.setPointerCapture(e.pointerId); ioEditor.lastX = e.clientX; ioEditor.lastY = e.clientY; };
+      ioEditor.canvas.onpointermove = (e) => { if (!ioEditor.dragging) return; const dx = e.clientX - ioEditor.lastX; const dy = e.clientY - ioEditor.lastY; ioEditor.lastX = e.clientX; ioEditor.lastY = e.clientY; ioEditor.state.x += dx; ioEditor.state.y += dy; drawEditor(); };
+      ioEditor.canvas.onpointerup = (e) => { ioEditor.dragging = false; try { ioEditor.canvas.releasePointerCapture(e.pointerId); } catch (err) {} };
+      ioEditor.canvas.onpointercancel = () => { ioEditor.dragging = false; };
+      ioEditor.canvas.onwheel = (e) => {
+        e.preventDefault(); const rect = ioEditor.canvas.getBoundingClientRect(); const ox = e.clientX - rect.left; const oy = e.clientY - rect.top; const prevScale = ioEditor.state.scale; const delta = e.deltaY > 0 ? 0.9 : 1.1; ioEditor.state.scale = Math.max(0.1, Math.min(5, ioEditor.state.scale * delta)); const scaleRatio = ioEditor.state.scale / prevScale; // keep pointer position stable
+        ioEditor.state.x = ox - (ox - ioEditor.state.x) * scaleRatio;
+        ioEditor.state.y = oy - (oy - ioEditor.state.y) * scaleRatio;
+        drawEditor();
+      };
+    }
+
+    function drawEditor() {
+      const c = ioEditor.ctx; if (!c) return; const cw = ioEditor.canvas.width, ch = ioEditor.canvas.height; c.clearRect(0, 0, cw, ch); c.fillStyle = '#0b0b0b'; c.fillRect(0, 0, cw, ch);
+      if (!ioEditor.img) return; const iw = ioEditor.state.iw, ih = ioEditor.state.ih; const s = ioEditor.baseScale * ioEditor.state.scale; const dw = iw * s, dh = ih * s; const dx = ioEditor.state.x, dy = ioEditor.state.y; c.drawImage(ioEditor.img, dx, dy, dw, dh); c.strokeStyle = 'rgba(255,255,255,0.06)'; c.lineWidth = 2; c.strokeRect(0, 0, cw, ch);
+    }
+
+    function ioEditorReset() { if (!ioEditor.img) return; ioEditor.state.scale = 1; ioEditor.state.x = (ioEditor.canvas.width - ioEditor.state.iw * ioEditor.baseScale) / 2; ioEditor.state.y = (ioEditor.canvas.height - ioEditor.state.ih * ioEditor.baseScale) / 2; drawEditor(); }
+
+    function ioEditorSave() {
+      const which = ioEditor.which; if (!which) return; S[which].editor = { x: ioEditor.state.x, y: ioEditor.state.y, scale: ioEditor.state.scale, baseScale: ioEditor.baseScale, imgW: ioEditor.state.iw, imgH: ioEditor.state.ih };
+      closeIOEditor(); toast('Saved editor state', 'ok'); renderAll();
+    }
+
+    function closeIOEditor() {
+      const modal = document.getElementById('ioEditorModal'); if (modal) modal.style.display = 'none';
+      if (ioEditor.canvas) { ioEditor.canvas.onpointerdown = null; ioEditor.canvas.onpointermove = null; ioEditor.canvas.onpointerup = null; ioEditor.canvas.onpointercancel = null; ioEditor.canvas.onwheel = null; }
+      ioEditor.which = null; ioEditor.canvas = null; ioEditor.ctx = null; ioEditor.img = null; ioEditor.state = { x: 0, y: 0, scale: 1, iw: 0, ih: 0 }; ioEditor.dragging = false; ioEditor.baseScale = 1;
+    }
 
     // ═══════════════════════════════════════════════════════════════════════
     //  PROCESSING
