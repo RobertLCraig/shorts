@@ -14,21 +14,30 @@ A powerful, web-based video editing tool designed specifically for creating shor
 
 ### 🎨 Content Enhancement
 - **Intro/Outro Images**: Add custom opening/closing images with:
-  - **Canvas Editor**: Drag to position, scroll to zoom, scale and arrange images at max viewable size
-  - **Duration Control**: Set custom duration for each intro/outro (1–10 seconds)
+  - **Large Editor Modal**: Full-size drag-to-position, scroll-to-zoom canvas editor (900px wide)
+  - **Duration Slider**: Range slider control for each intro/outro (1–10 seconds, 0.5s steps)
+  - **Thumbnail Preview**: Uploaded images display as thumbnails in the dropzone
   - **Live Preview**: See your placement before export
 - **Carousel Overlay**: Rotating product images with configurable:
   - Position (top-left/right, bottom-left/right)
-  - Rotation interval (2–5s)
-  - Size and shape (small/medium/large, rounded/circle/square)
+  - Rotation interval (1–10s) via range slider
+  - Size (small/medium/large) and shape (rounded/circle/square)
+- **Text Overlay**: Add text to your videos with:
+  - Configurable font size (20–120px), color picker, position (top/center/bottom)
+  - Font style (bold/normal/italic)
+  - Background options (none, shadow, or semi-transparent box)
+  - Rendered on both preview and exported video
 - **Thumbnail Generator**: Grab a frame from preview or upload custom thumbnail
 
 ### 🎵 Audio Management
 - **Local Audio Upload**: Add multiple audio tracks with per-track volume control (sliders)
 - **Built-in Audio Library**: Curated royalty-free music from Kevin MacLeod (Incompetech):
-  - Upbeat tracks (Monkeys Spinning Monkeys, Sneaky Snitch, etc.)
+  - Upbeat tracks (Monkeys Spinning Monkeys, Sneaky Snitch, Fluffing a Duck, Upbeat Forever)
   - Lofi ambient (Local Forecast, Mining by Moonlight, After Lemons)
+  - Chill (Carefree, Wholesome, Pixelland)
+  - Cinematic (Impact Prelude, Cipher)
   - One-click add-to-project with automatic attribution
+- **Project Audio**: Local audio files from the `audio/` directory
 - **Audio Mixing**: All tracks mixed and exported together
 
 ### 🎯 Export & Distribution
@@ -49,9 +58,10 @@ A powerful, web-based video editing tool designed specifically for creating shor
 - **Persistent Settings**: Crop mode, speed, quality (CRF), dimensions
 
 ### ⚙️ Advanced Settings
-- **Crop Modes**: Center-crop, blur-padding, or stretch videos to fit frame
-- **Speed Control**: 1x–4x playback speed (affects frame count and export time)
-- **Video Quality (CRF)**: 18 (highest) to 28 (lowest) for MP4/WebM export
+- **Crop Modes**: Center-crop or blur-padding to fit frame
+- **Speed Control**: 1×–8× playback speed (affects frame count and export time)
+- **Video Quality (CRF)**: Very High, High, or Medium quality for MP4/WebM export
+- **Crop Offset**: Fine-tune the horizontal crop position with a -100% to +100% slider
 - **Metadata**: Title, description, model/shop URLs, and hashtags for platforms
 
 ## Getting Started
@@ -87,8 +97,9 @@ A powerful, web-based video editing tool designed specifically for creating shor
 2. **Arrange Lanes**: Drag videos from the pool into main/secondary lanes
 3. **Add Audio**: Upload local audio files or pick from the built-in library
 4. **Add Extras**: 
-   - Upload intro/outro images and use the canvas editor to position them
+   - Upload intro/outro images, adjust duration with the slider, and use the canvas editor to position them
    - Add carousel overlay images for product showcases
+   - Add text overlay with customizable font, color, position, and background
 5. **Preview**: Play through the montage and adjust settings in real-time
 6. **Export**: Click "Process & Export" to render the final video (takes 1-5 min depending on duration)
 7. **Distribute**: Download video, share to platforms with auto-formatted descriptions, or save project for later
@@ -99,8 +110,9 @@ A powerful, web-based video editing tool designed specifically for creating shor
 1. Upload 2–3 timelapse videos
 2. Add them to the main lane in sequence
 3. Pick "Monkeys Spinning Monkeys" from the audio library
-4. Add an intro image (e.g., product render) with 2-second duration
-5. Export and upload to YouTube Shorts with auto-generated hashtags
+4. Add an intro image (e.g., product render) with 2-second duration via slider
+5. Add text overlay "My 3D Print" with shadow background
+6. Export and upload to YouTube Shorts with auto-generated hashtags
 
 ### Example 2: Product Comparison (Split-Screen)
 1. Upload two comparison videos
@@ -153,21 +165,24 @@ bambu-shorts-studio/
 
 ## Key Sections (video2short.html)
 
-1. **HTML** (Lines 1–1960): 
+1. **HTML** (Lines 1–2030): 
    - Three-step workflow: Project Setup → Editor → Export
    - Modal dialogs for audio library and image editor
-   - Settings panels for video, carousel, audio, and intro/outro
+   - Settings panels for video, carousel, audio, text overlay, and intro/outro
+   - Text overlay panel with font/color/position/background controls
 
-2. **CSS** (Lines 11–1618):
+2. **CSS** (Lines 13–1620):
    - Dark theme with green accents
    - Responsive grid layout
    - Animations and transitions
+   - Range slider styling
 
-3. **JavaScript** (Lines 2008–3203):
-   - **State Management** (`S`): Global state for videos, audio, settings
+3. **JavaScript** (Lines 2125–3400):
+   - **State Management** (`S`): Global state for videos, audio, text overlay, settings
    - **Navigation** (`goStep`, `renderAll`)
    - **Video Logic** (`loadVideos`, `setupLaneDropTarget`, `renderLanes`)
    - **Playback Engine** (`computeMontageDuration`, `resolveTimeInLane`, `drawFrame`)
+   - **Text Overlay** (`drawTextOverlay`, `updateTextOverlay`, `setTextBg`)
    - **Export Pipeline** (`processAndExport`, `setupExportPage`)
    - **UI Helpers** (`toast`, `esc`, `fmtTime`, etc.)
    - **Editor** (`openIOEditor`, `drawEditor`, `ioEditorSave`)
@@ -186,7 +201,6 @@ bambu-shorts-studio/
 - **MediaRecorder**: Frame + audio capture for export
 - **Web Audio API**: Audio context, gain nodes, mixing
 - **Fetch API**: Audio library downloads, CORS-aware fallback
-- **IndexedDB** (optional future): Project persistence
 - **File API**: Blob/File handling, Object URLs
 
 ## Configuration & Settings
@@ -194,11 +208,12 @@ bambu-shorts-studio/
 All settings are stored in the global `S` object:
 
 ```javascript
-S.cropMode       // 'crop' | 'padding' | 'stretch'
-S.speed          // 1 | 1.5 | 2 | 3 | 4
-S.crf            // 18–28 (video quality, lower = higher quality)
+S.cropMode       // 'crop' | 'padding'
+S.speed          // 1 | 2 | 4 | 8
+S.crf            // 15 (very high) | 18 (high) | 23 (medium)
 S.layout         // 'single' | 'split-h' | 'pip'
 S.meta           // title, desc, fileUrl, shopUrl, tags
+S.textOverlay    // { text, size, color, position, style, bg }
 ```
 
 No configuration file needed; all settings are UI-driven.
@@ -225,14 +240,28 @@ No configuration file needed; all settings are UI-driven.
 - **Cause**: Browser lacks H.264 codec support (Firefox on Linux)
 - **Fix**: Use Chrome/Safari/Edge, or accept WebM format
 
+## Recent Changes
+
+### Bug Fixes (v2.0)
+- **Fixed**: Outro image now properly displays in exported video (was showing looped start instead)
+- **Fixed**: Preview is no longer jittery/jumpy (removed duplicate function definitions that broke audio sync)
+- **Fixed**: Audio tracks reliably render in exported video (elements are now cloned for export to avoid `createMediaElementSource` reuse issues)
+
+### New Features (v2.0)
+- **Text Overlay**: Add customizable text with font size, color, position, style, and background options
+- **Improved Intro/Outro**: Larger dropzones (160×120px) with thumbnail previews, range sliders for duration
+- **Carousel Settings**: UI controls for interval, position, size, and shape
+- **Expanded Audio Library**: Added Chill (Carefree, Wholesome, Pixelland) and Cinematic (Impact Prelude, Cipher) categories plus Fluffing a Duck
+- **Editor Modal**: Wider canvas (900px max-width, 450×800px display)
+
 ## Future Enhancements
 
-- [ ] Text overlay support (titles, captions, watermarks)
+- [ ] Timeline-based drag & drop editor with multi-track visualization
 - [ ] Color grading and brightness/contrast adjustments
 - [ ] Speech-to-text subtitle automation
 - [ ] Batch export to multiple platforms with watermark
 - [ ] Cloud storage integration (Google Drive, Dropbox)
-- [ ] Mobile app (React Native / Capacitor)
+- [ ] Local AI music generator integration
 - [ ] Plugin system for custom transitions/effects
 - [ ] Real-time collaboration (WebRTC)
 
