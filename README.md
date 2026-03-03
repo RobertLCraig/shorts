@@ -4,20 +4,20 @@ A powerful, web-based video editing tool designed specifically for creating shor
 
 ## Features
 
-### 🎬 Core Video Editing
-- **Multi-Lane Montage**: Drag and drop videos into main/secondary lanes with support for:
-  - **Single Layout**: One video full-screen
-  - **Split-Horizontal**: Two videos stacked vertically with adjustable gap
-  - **Picture-in-Picture**: Primary video full-screen with secondary in the corner
-- **Flexible Video Pool**: Upload multiple videos, reassign them to lanes in real-time
-- **Duration Balance**: Visual feedback on lane duration imbalance with smart suggestions
+### 🎬 Multi-Channel Video Editor
+- **Channel-Based Composition**: Up to 4 channels (A–D) with flexible layouts:
+  - **Full**: Channel A fills the entire frame
+  - **Split**: Channels A (top) + B (bottom) stacked vertically
+  - **Quad**: Channels A/B/C/D in a 4-way quadrant grid
+- **Direct Upload**: Upload videos via header button, per-channel "+" buttons, or drag-and-drop onto timeline tracks
+- **Dynamic Timeline**: Visual multi-track timeline with time ruler, playhead, and per-channel clips
 
 ### 🎨 Content Enhancement
-- **Intro/Outro Images**: Add custom opening/closing images with:
-  - **Large Editor Modal**: Full-size drag-to-position, scroll-to-zoom canvas editor (900px wide)
-  - **Duration Slider**: Range slider control for each intro/outro (1–10 seconds, 0.5s steps)
-  - **Thumbnail Preview**: Uploaded images display as thumbnails in the dropzone
-  - **Live Preview**: See your placement before export
+- **Intro/Outro Images**: Add multiple intro/outro images with:
+  - Per-image duration sliders (1–10 seconds, 0.5s steps)
+  - Full-size drag-to-position, scroll-to-zoom canvas editor (900px wide)
+  - Thumbnail previews in the image list
+  - Live preview in the canvas
 - **Carousel Overlay**: Rotating product images with configurable:
   - Position (top-left/right, bottom-left/right)
   - Rotation interval (1–10s) via range slider
@@ -41,7 +41,7 @@ A powerful, web-based video editing tool designed specifically for creating shor
 - **Audio Mixing**: All tracks mixed and exported together
 
 ### 🎯 Export & Distribution
-- **Multi-Format Export**: MP4 (if supported) or WebM with configurable CRC/bitrate
+- **Multi-Format Export**: MP4 (if supported) or WebM with configurable CRF/bitrate
 - **Real-time Preview**: Scrub through the montage with play/pause and timeline control
 - **Platform-Specific Cards**: YouTube Shorts, TikTok, Instagram Reels, Pinterest, Facebook Reels with:
   - Copy-paste descriptions
@@ -53,8 +53,8 @@ A powerful, web-based video editing tool designed specifically for creating shor
   - Project metadata ZIP (easy sharing/archiving)
 
 ### 💾 Project Management
-- **Save/Load JSON**: Export project configuration (video layout, audio, metadata, settings)
-- **One-Click Restore**: Re-upload videos and re-add audio; lane assignments and metadata are preserved
+- **Save/Load JSON**: Export project configuration (channel assignments, audio, metadata, settings)
+- **Backward Compatible**: Loads v3 lane-based project files and migrates to v4 channel format
 - **Persistent Settings**: Crop mode, speed, quality (CRF), dimensions
 
 ### ⚙️ Advanced Settings
@@ -93,34 +93,16 @@ A powerful, web-based video editing tool designed specifically for creating shor
 
 ### Quick Start
 
-1. **Upload Videos**: Drag video files onto the upload zone or click to browse
-2. **Arrange Lanes**: Drag videos from the pool into main/secondary lanes
+1. **Upload Videos**: Click "Upload Media" or drag files onto a channel track
+2. **Choose Layout**: Use the header layout switcher (Full / Split / Quad)
 3. **Add Audio**: Upload local audio files or pick from the built-in library
 4. **Add Extras**: 
-   - Upload intro/outro images, adjust duration with the slider, and use the canvas editor to position them
+   - Upload intro/outro images with per-image duration sliders
    - Add carousel overlay images for product showcases
    - Add text overlay with customizable font, color, position, and background
 5. **Preview**: Play through the montage and adjust settings in real-time
 6. **Export**: Click "Process & Export" to render the final video (takes 1-5 min depending on duration)
 7. **Distribute**: Download video, share to platforms with auto-formatted descriptions, or save project for later
-
-## Usage Examples
-
-### Example 1: 3D Print Timelapse with Music
-1. Upload 2–3 timelapse videos
-2. Add them to the main lane in sequence
-3. Pick "Monkeys Spinning Monkeys" from the audio library
-4. Add an intro image (e.g., product render) with 2-second duration via slider
-5. Add text overlay "My 3D Print" with shadow background
-6. Export and upload to YouTube Shorts with auto-generated hashtags
-
-### Example 2: Product Comparison (Split-Screen)
-1. Upload two comparison videos
-2. Select **Split-Horizontal** layout
-3. Drag one video to main lane, one to secondary
-4. Add carousel overlay with product renders
-5. Set up descriptions for all platforms
-6. Export and batch-download the video + ZIP
 
 ## Technical Details
 
@@ -129,6 +111,7 @@ A powerful, web-based video editing tool designed specifically for creating shor
 - **Canvas-based rendering**: All video composition happens on a `<canvas>` element
 - **MediaRecorder API**: Frame-level rendering with automatic capture for precise export quality
 - **Web Audio API**: Audio mixing and synchronized playback during export
+- **Channel system**: State-managed channel assignments (`S.channels = {A:[], B:[], C:[], D:[]}`)
 
 ### Browser Compatibility
 | Feature | Chrome | Firefox | Safari | Edge |
@@ -160,58 +143,48 @@ bambu-shorts-studio/
 │   ├── ForwardAssemblyAIMusic1.mp4
 │   └── ForwardAssemblyAIMusic2.mp4
 ├── README.md                 # This file
+├── WALKTHROUGH.md            # Change log
 └── .git/                     # Git repository
 ```
 
 ## Key Sections (video2short.html)
 
-1. **HTML** (Lines 1–2030): 
-   - Three-step workflow: Project Setup → Editor → Export
+1. **HTML** (Lines 1–1700): 
+   - Direct-to-editor layout (no setup step)
+   - Header with layout switcher (Full/Split/Quad), Upload Media, Load/Save
+   - Tabbed panel: Settings, Media, Text, Audio
    - Modal dialogs for audio library and image editor
-   - Settings panels for video, carousel, audio, text overlay, and intro/outro
-   - Text overlay panel with font/color/position/background controls
+   - Timeline with dynamic channel tracks, playhead, and time ruler
 
-2. **CSS** (Lines 13–1620):
+2. **CSS** (Lines 13–1660):
    - Dark theme with green accents
    - Responsive grid layout
+   - Timeline track and clip styling
    - Animations and transitions
-   - Range slider styling
 
-3. **JavaScript** (Lines 2125–3400):
-   - **State Management** (`S`): Global state for videos, audio, text overlay, settings
-   - **Navigation** (`goStep`, `renderAll`)
-   - **Video Logic** (`loadVideos`, `setupLaneDropTarget`, `renderLanes`)
-   - **Playback Engine** (`computeMontageDuration`, `resolveTimeInLane`, `drawFrame`)
+3. **JavaScript** (Lines 1700–3500):
+   - **State Management** (`S`): Global state for videos, channels, audio, text overlay, settings
+   - **Channel System** (`channelDuration`, `resolveTimeInChannel`, `removeFromAllChannels`)
+   - **Video Logic** (`uploadMedia`, `setLayout`, `drawVideoSlice`)
+   - **Playback Engine** (`computeMontageDuration`, `drawFrame`, `startPreviewLoop`)
    - **Text Overlay** (`drawTextOverlay`, `updateTextOverlay`, `setTextBg`)
+   - **Audio Library** (`openAudioLibrary`, `addLibraryTrack`, `addProjectAudio`)
+   - **Multi-Image Intro/Outro** (`handleIOMulti`, `resolveIOImage`, `drawIOImageOnCanvas`)
+   - **Timeline** (`renderTimeline`, `updatePlayhead`, `seekTimelineFromTL`)
    - **Export Pipeline** (`processAndExport`, `setupExportPage`)
-   - **UI Helpers** (`toast`, `esc`, `fmtTime`, etc.)
-   - **Editor** (`openIOEditor`, `drawEditor`, `ioEditorSave`)
-
-## API & Dependencies
-
-### External CDN Resources
-- **JSZip** (3.10.1): ZIP file generation for batch downloads
-  ```html
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  ```
-- **Google Fonts**: DM Sans, IBM Plex Mono, Instrument Serif
-
-### Web APIs Used
-- **Canvas 2D**: `getContext('2d')`, drawing, image composition
-- **MediaRecorder**: Frame + audio capture for export
-- **Web Audio API**: Audio context, gain nodes, mixing
-- **Fetch API**: Audio library downloads, CORS-aware fallback
-- **File API**: Blob/File handling, Object URLs
+   - **UI Helpers** (`toast`, `esc`, `fmtTime`, `switchTab`)
+   - **Image Editor** (`openIOEditor`, `drawEditor`, `ioEditorSave`)
 
 ## Configuration & Settings
 
 All settings are stored in the global `S` object:
 
 ```javascript
-S.cropMode       // 'crop' | 'padding'
+S.layout         // 'full' | 'split' | 'quad'
+S.channels       // { A: [], B: [], C: [], D: [] } — video id arrays
+S.cropMode       // 'crop' | 'pad'
 S.speed          // 1 | 2 | 4 | 8
 S.crf            // 15 (very high) | 18 (high) | 23 (medium)
-S.layout         // 'single' | 'split-h' | 'pip'
 S.meta           // title, desc, fileUrl, shopUrl, tags
 S.textOverlay    // { text, size, color, position, style, bg }
 ```
@@ -242,21 +215,27 @@ No configuration file needed; all settings are UI-driven.
 
 ## Recent Changes
 
-### Bug Fixes (v2.0)
-- **Fixed**: Outro image now properly displays in exported video (was showing looped start instead)
-- **Fixed**: Preview is no longer jittery/jumpy (removed duplicate function definitions that broke audio sync)
-- **Fixed**: Audio tracks reliably render in exported video (elements are now cloned for export to avoid `createMediaElementSource` reuse issues)
+### v3.0 — Channel-Based Architecture
+- **Removed** Step 1 (Project Setup) — editor opens directly
+- **Replaced** lane system (`S.lanes`) with 4-channel system (`S.channels = {A, B, C, D}`)
+- **Added** layout switcher in header (Full / Split / Quad)
+- **Added** dynamic timeline with per-channel tracks, "+" buttons, and drag-and-drop
+- **Added** multi-image intro/outro with per-image duration sliders
+- **Fixed** preview jittering (seek threshold increased to 0.15s)
+- **Fixed** outro display (corrected `maxChDur` reference)
+- **Fixed** audio missing from export (cloned elements for `createMediaElementSource`)
+- **Fixed** library audio CORS (fallback to direct URL for `<audio>` element)
+- **Cleaned up** dead CSS (~180 lines), dead JS backward-compat functions (~50 lines)
 
-### New Features (v2.0)
+### v2.0
 - **Text Overlay**: Add customizable text with font size, color, position, style, and background options
-- **Improved Intro/Outro**: Larger dropzones (160×120px) with thumbnail previews, range sliders for duration
+- **Improved Intro/Outro**: Larger dropzones with thumbnail previews, range sliders for duration
 - **Carousel Settings**: UI controls for interval, position, size, and shape
-- **Expanded Audio Library**: Added Chill (Carefree, Wholesome, Pixelland) and Cinematic (Impact Prelude, Cipher) categories plus Fluffing a Duck
+- **Expanded Audio Library**: Added Chill and Cinematic categories plus Fluffing a Duck
 - **Editor Modal**: Wider canvas (900px max-width, 450×800px display)
 
 ## Future Enhancements
 
-- [ ] Timeline-based drag & drop editor with multi-track visualization
 - [ ] Color grading and brightness/contrast adjustments
 - [ ] Speech-to-text subtitle automation
 - [ ] Batch export to multiple platforms with watermark
@@ -302,8 +281,6 @@ This tool is provided as-is. Use responsibly:
 ## Contact & Support
 
 - **Issues**: Open an issue on GitHub for bugs or feature requests
-- **Email**: [your-email@example.com](mailto:your-email@example.com) (optional)
-- **Discord**: [Join our community](https://discord.gg/your-invite) (optional)
 
 ---
 

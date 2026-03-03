@@ -131,43 +131,6 @@
       font-style: italic
     }
 
-    .header-step-pills {
-      margin-left: auto;
-      display: flex;
-      gap: 4px
-    }
-
-    .step-pill {
-      padding: 6px 16px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: .3px;
-      color: var(--text-3);
-      background: transparent;
-      border: 1px solid var(--border-subtle);
-      cursor: pointer;
-      transition: all .25s var(--ease);
-      font-family: var(--font-mono)
-    }
-
-    .step-pill:hover {
-      border-color: var(--border-default);
-      color: var(--text-2)
-    }
-
-    .step-pill.active {
-      background: var(--accent-muted);
-      border-color: var(--accent);
-      color: var(--accent)
-    }
-
-    .step-pill.completed {
-      border-color: var(--accent);
-      color: var(--accent);
-      opacity: .6
-    }
-
     /* ═══ LAYOUT ═══ */
     .app {
       position: relative;
@@ -201,7 +164,7 @@
       }
     }
 
-    /* ═══ STEP 1: PROJECT ═══ */
+    /* ═══ DROPZONE (shared) ═══ */
     .upload-zone {
       border: 2px dashed var(--border-default);
       border-radius: var(--radius-xl);
@@ -268,138 +231,7 @@
       display: none
     }
 
-    /* ── Project bar ── */
-    .project-bar {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-top: 20px;
-      padding: 12px 16px;
-      background: var(--bg-raised);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-md)
-    }
 
-    .project-bar .info {
-      flex: 1;
-      font-size: 13px;
-      color: var(--text-2)
-    }
-
-    .project-bar .info strong {
-      color: var(--text-1)
-    }
-
-    /* ── Section headers ── */
-    .section-head {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin: 24px 0 12px
-    }
-
-    .section-head h3 {
-      font-family: var(--font-display);
-      font-size: 18px;
-      font-style: italic
-    }
-
-    .section-head .pill {
-      font-family: var(--font-mono);
-      font-size: 11px;
-      padding: 2px 10px;
-      border-radius: 10px;
-      background: var(--accent-muted);
-      color: var(--accent)
-    }
-
-    /* ── Layout Picker ── */
-    .layout-picker {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap
-    }
-
-    .layout-option {
-      width: 80px;
-      padding: 10px 0;
-      border: 2px solid var(--border-subtle);
-      border-radius: var(--radius-md);
-      background: var(--bg-raised);
-      cursor: pointer;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 6px;
-      transition: all .2s var(--ease)
-    }
-
-    .layout-option:hover {
-      border-color: var(--border-strong)
-    }
-
-    .layout-option.active {
-      border-color: var(--accent);
-      background: var(--accent-muted)
-    }
-
-    .layout-thumb {
-      width: 32px;
-      height: 56px;
-      border: 1px solid var(--border-default);
-      border-radius: 4px;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column
-    }
-
-    .layout-thumb div {
-      flex: 1;
-      background: var(--accent-muted)
-    }
-
-    .layout-thumb div+div {
-      border-top: 1px solid var(--border-default)
-    }
-
-    .layout-label {
-      font-size: 10px;
-      color: var(--text-3);
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: .5px
-    }
-
-    .layout-option.active .layout-label {
-      color: var(--accent)
-    }
-
-    /* ── Video Library (pool) ── */
-    .video-pool {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      min-height: 80px;
-      padding: 16px;
-      background: var(--bg-raised);
-      border: 2px dashed var(--border-subtle);
-      border-radius: var(--radius-md);
-      transition: all .2s var(--ease)
-    }
-
-    .video-pool.drag-target {
-      border-color: var(--accent);
-      background: var(--accent-soft)
-    }
-
-    .video-pool-empty {
-      width: 100%;
-      text-align: center;
-      color: var(--text-4);
-      font-size: 13px;
-      padding: 16px;
-      pointer-events: none
-    }
 
     /* ── Video Chip (draggable) ── */
     .vid-chip {
@@ -479,127 +311,7 @@
       color: var(--red)
     }
 
-    /* ── Lane (drop target for video chips) ── */
-    .lane {
-      margin-bottom: 16px
-    }
 
-    .lane-header {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 8px
-    }
-
-    .lane-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%
-    }
-
-    .lane-label {
-      font-family: var(--font-mono);
-      font-size: 12px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: .5px
-    }
-
-    .lane-dur {
-      font-family: var(--font-mono);
-      font-size: 11px;
-      color: var(--text-3);
-      margin-left: auto
-    }
-
-    .lane-drop {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      min-height: 56px;
-      padding: 12px;
-      background: var(--bg-raised);
-      border: 2px dashed var(--border-subtle);
-      border-radius: var(--radius-md);
-      transition: all .2s var(--ease)
-    }
-
-    .lane-drop.drag-target {
-      border-color: var(--accent);
-      background: var(--accent-soft)
-    }
-
-    .lane-drop-hint {
-      color: var(--text-4);
-      font-size: 12px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      pointer-events: none
-    }
-
-    /* ── Duration balance bar ── */
-    .balance-bar {
-      margin-top: 16px;
-      padding: 14px 16px;
-      background: var(--bg-raised);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-md)
-    }
-
-    .balance-visual {
-      display: flex;
-      height: 8px;
-      border-radius: 4px;
-      overflow: hidden;
-      background: var(--bg-surface);
-      margin: 8px 0
-    }
-
-    .balance-seg {
-      height: 100%;
-      transition: width .3s var(--ease)
-    }
-
-    .balance-info {
-      display: flex;
-      justify-content: space-between;
-      font-size: 12px;
-      color: var(--text-3)
-    }
-
-    .balance-info span {
-      font-family: var(--font-mono)
-    }
-
-    .balance-suggestion {
-      font-size: 12px;
-      color: var(--amber);
-      margin-top: 8px;
-      display: none
-    }
-
-    .balance-suggestion.visible {
-      display: block
-    }
-
-    /* Continue bar */
-    .continue-bar {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      padding: 16px 20px;
-      background: var(--bg-raised);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-md);
-      margin-top: 20px
-    }
-
-    .continue-bar .info {
-      flex: 1;
-      font-size: 14px;
-      color: var(--text-2)
-    }
 
     /* ── Layout Switcher (Header) ── */
     .layout-switcher {
@@ -2565,7 +2277,7 @@
         const entry = { id: S.nextId++, file: f, url: u, el, name: f.name, volume: 1 };
         S.audios.push(entry);
       });
-      if (files.length) { renderAudioList(); updateAudioBadge(); toast(`Added ${files.length} audio track(s)`, 'ok'); }
+      if (files.length) { renderAudioList(); updateAudioBadge(); computeMontageDuration(); renderTimeline(); toast(`Added ${files.length} audio track(s)`, 'ok'); }
     });
 
     function renderAudioList() {
@@ -2592,6 +2304,8 @@
       S.audios.splice(i, 1);
       renderAudioList();
       updateAudioBadge();
+      computeMontageDuration();
+      renderTimeline();
     }
 
     function updateAudioBadge() {
@@ -2609,12 +2323,7 @@
       return S.channels[ch].reduce((sum, id) => { const v = vid(id); return sum + (v ? v.duration : 0); }, 0);
     }
 
-    // Backward-compatible: laneDuration maps to channelDuration
-    function laneDuration(lane) {
-      if (lane === 'main') return channelDuration('A');
-      if (lane === 'second') return channelDuration('B');
-      return channelDuration(lane);
-    }
+
 
     function removeFromAllChannels(vidId) {
       for (const ch of ['A', 'B', 'C', 'D']) {
@@ -2739,7 +2448,7 @@
           document.getElementById('metaDesc').value = S.meta.desc || '';
           document.getElementById('metaFileUrl').value = S.meta.fileUrl || '';
           document.getElementById('metaShopUrl').value = S.meta.shopUrl || '';
-          document.getElementById('projectArea').style.display = 'block';
+
           setLayout(S.layout);
           renderTags();
           renderAll();
@@ -2796,12 +2505,7 @@
       const last = vid(ids[ids.length - 1]);
       return last ? { el: last.el, localTime: last.duration - 0.01 } : null;
     }
-    // Backward compat alias
-    function resolveTimeInLane(lane, gt) {
-      if (lane === 'main') return resolveTimeInChannel('A', gt);
-      if (lane === 'second') return resolveTimeInChannel('B', gt);
-      return resolveTimeInChannel(lane, gt);
-    }
+
 
     // ═══════════════════════════════════════════════════════════════════════
     //  PREVIEW RENDERER
@@ -3029,12 +2733,18 @@
         }
 
         S.audios.push({ id: S.nextId++, file: new File([blob], name + '.ogg', { type: blob.type }), url: u, el, name: track.name, volume: 1 });
-        renderAudioList();
-        updateAudioBadge();
-        toast('Track added!', 'ok');
       } catch (err) {
-        toast('Error adding track: ' + err.message, 'err');
+        console.warn('Fetch failed, falling back to direct URL', err);
+        const u = url;
+        const el = new Audio(u);
+        S.audios.push({ id: S.nextId++, file: null, url: u, el, name: track.name, volume: 1 });
       }
+
+      renderAudioList();
+      updateAudioBadge();
+      computeMontageDuration();
+      renderTimeline();
+      toast('Track added!', 'ok');
     }
 
     async function addProjectAudio(index) {
@@ -3060,6 +2770,8 @@
 
       renderAudioList();
       updateAudioBadge();
+      computeMontageDuration();
+      renderTimeline();
       toast('Project track added!', 'ok');
     }
 
@@ -3419,47 +3131,7 @@
       if (on) { b.textContent = 'On'; b.className = 'badge badge-green' } else { b.textContent = 'Off'; b.className = 'badge badge-amber' }
     }
 
-    function handleIO(inputEl, which) {
-      const f = inputEl.files && inputEl.files[0];
-      if (!f || !f.type.startsWith('image/')) return;
-      // revoke previous
-      if (S[which] && S[which].url) URL.revokeObjectURL(S[which].url);
-      const u = URL.createObjectURL(f);
-      const imgEl = document.getElementById(which + 'Img');
-      const placeholder = document.getElementById(which + 'Placeholder');
-      if (imgEl) { imgEl.src = u; imgEl.style.display = 'block'; }
-      if (placeholder) placeholder.style.display = 'none';
-      S[which].file = f; S[which].url = u; S[which].img = new Image(); S[which].img.onload = () => { renderAll(); }; S[which].img.src = u;
-      const durEl = document.getElementById(which + 'Dur'); if (durEl) { S[which].duration = Number(durEl.value) || S[which].duration; }
-      updateIOBadge();
-    }
 
-    function updateIO(which) {
-      const durEl = document.getElementById(which + 'Dur'); if (!durEl) return; S[which].duration = Number(durEl.value) || S[which].duration; renderAll(); updateIOBadge();
-    }
-
-    function clearIO(which) {
-      const imgEl = document.getElementById(which + 'Img'); const placeholder = document.getElementById(which + 'Placeholder');
-      if (S[which] && S[which].url) URL.revokeObjectURL(S[which].url);
-      S[which].file = null; S[which].url = null; S[which].img = null; S[which].duration = 3;
-      if (imgEl) { imgEl.src = ''; imgEl.style.display = 'none'; }
-      if (placeholder) { placeholder.style.display = 'block'; }
-      const durEl = document.getElementById(which + 'Dur'); if (durEl) durEl.value = 3;
-      const durValEl = document.getElementById(which + 'DurVal'); if (durValEl) durValEl.textContent = '3.0s';
-      updateIOBadge(); renderAll();
-    }
-
-    // ── Duration slider handler for intro/outro ──
-    function updateIOSlider(which) {
-      const durEl = document.getElementById(which + 'Dur');
-      const valEl = document.getElementById(which + 'DurVal');
-      if (!durEl) return;
-      const val = parseFloat(durEl.value);
-      S[which].duration = val;
-      if (valEl) valEl.textContent = val.toFixed(1) + 's';
-      computeMontageDuration();
-      renderAll();
-    }
 
     // ═══════════════════════════════════════════════════════════════════════
     //  TEXT OVERLAY
