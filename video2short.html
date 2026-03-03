@@ -10,6 +10,7 @@
     href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800&family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap"
     rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="audio/library.js"></script>
   <style>
     :root {
       --bg-base: #08090c;
@@ -2110,22 +2111,9 @@
       introImages: [],      // [{ id, file, url, duration: 3, img, editor: null }]
       outroImages: [],      // [{ id, file, url, duration: 3, img, editor: null }],
       // Curated Library (Kevin MacLeod - Incompetech)
-      // Using https links if available, otherwise might need proxy or different host.
-      // Verified Monkeys Spinning Monkeys is on incompetech.com
-      audioLibrary: [
-        { name: 'Monkeys Spinning Monkeys', author: 'Kevin MacLeod', genre: 'Upbeat', url: 'https://incompetech.com/music/royalty-free/mp3-royaltyfree/Monkeys%20Spinning%20Monkeys.mp3', attribution: 'Monkeys Spinning Monkeys by Kevin MacLeod (incompetech.com)\nLicensed under Creative Commons: By Attribution 4.0\nhttp://creativecommons.org/licenses/by/4.0/' },
-        { name: 'Local Forecast - Elevator', author: 'Kevin MacLeod', genre: 'Lofi', url: 'https://incompetech.com/music/royalty-free/mp3-royaltyfree/Local%20Forecast%20-%20Elevator.mp3', attribution: 'Local Forecast - Elevator by Kevin MacLeod (incompetech.com)\nLicensed under Creative Commons: By Attribution 4.0\nhttp://creativecommons.org/licenses/by/4.0/' },
-        { name: 'Upbeat Forever', author: 'Kevin MacLeod', genre: 'Upbeat', url: 'https://incompetech.com/music/royalty-free/mp3-royaltyfree/Upbeat%20Forever.mp3', attribution: 'Upbeat Forever by Kevin MacLeod (incompetech.com)\nLicensed under Creative Commons: By Attribution 4.0\nhttp://creativecommons.org/licenses/by/4.0/' },
-        { name: 'Mining by Moonlight', author: 'Kevin MacLeod', genre: 'Lofi', url: 'https://incompetech.com/music/royalty-free/mp3-royaltyfree/Mining%20by%20Moonlight.mp3', attribution: 'Mining by Moonlight by Kevin MacLeod (incompetech.com)\nLicensed under Creative Commons: By Attribution 4.0\nhttp://creativecommons.org/licenses/by/4.0/' },
-        { name: 'Sneaky Snitch', author: 'Kevin MacLeod', genre: 'Upbeat', url: 'https://incompetech.com/music/royalty-free/mp3-royaltyfree/Sneaky%20Snitch.mp3', attribution: 'Sneaky Snitch by Kevin MacLeod (incompetech.com)\nLicensed under Creative Commons: By Attribution 4.0\nhttp://creativecommons.org/licenses/by/4.0/' },
-        { name: 'After Lemons', author: 'Kevin MacLeod', genre: 'Lofi', url: 'https://incompetech.com/music/royalty-free/mp3-royaltyfree/After%20Lemons.mp3', attribution: 'After Lemons by Kevin MacLeod (incompetech.com)\nLicensed under Creative Commons: By Attribution 4.0\nhttp://creativecommons.org/licenses/by/4.0/' },
-        { name: 'Carefree', author: 'Kevin MacLeod', genre: 'Chill', url: 'https://incompetech.com/music/royalty-free/mp3-royaltyfree/Carefree.mp3', attribution: 'Carefree by Kevin MacLeod (incompetech.com)\nLicensed under Creative Commons: By Attribution 4.0\nhttp://creativecommons.org/licenses/by/4.0/' },
-        { name: 'Fluffing a Duck', author: 'Kevin MacLeod', genre: 'Upbeat', url: 'https://incompetech.com/music/royalty-free/mp3-royaltyfree/Fluffing%20a%20Duck.mp3', attribution: 'Fluffing a Duck by Kevin MacLeod (incompetech.com)\nLicensed under Creative Commons: By Attribution 4.0\nhttp://creativecommons.org/licenses/by/4.0/' },
-        { name: 'Wholesome', author: 'Kevin MacLeod', genre: 'Chill', url: 'https://incompetech.com/music/royalty-free/mp3-royaltyfree/Wholesome.mp3', attribution: 'Wholesome by Kevin MacLeod (incompetech.com)\nLicensed under Creative Commons: By Attribution 4.0\nhttp://creativecommons.org/licenses/by/4.0/' },
-        { name: 'Impact Prelude', author: 'Kevin MacLeod', genre: 'Cinematic', url: 'https://incompetech.com/music/royalty-free/mp3-royaltyfree/Impact%20Prelude.mp3', attribution: 'Impact Prelude by Kevin MacLeod (incompetech.com)\nLicensed under Creative Commons: By Attribution 4.0\nhttp://creativecommons.org/licenses/by/4.0/' },
-        { name: 'Cipher', author: 'Kevin MacLeod', genre: 'Cinematic', url: 'https://incompetech.com/music/royalty-free/mp3-royaltyfree/Cipher.mp3', attribution: 'Cipher by Kevin MacLeod (incompetech.com)\nLicensed under Creative Commons: By Attribution 4.0\nhttp://creativecommons.org/licenses/by/4.0/' },
-        { name: 'Pixelland', author: 'Kevin MacLeod', genre: 'Chill', url: 'https://incompetech.com/music/royalty-free/mp3-royaltyfree/Pixelland.mp3', attribution: 'Pixelland by Kevin MacLeod (incompetech.com)\nLicensed under Creative Commons: By Attribution 4.0\nhttp://creativecommons.org/licenses/by/4.0/' }
-      ],
+      // Curated Library (Kevin MacLeod - Incompetech) + Licensed tracks
+      // Pre-fetched locally via build_audio_library.ps1 into audio/library.js
+      audioLibrary: window.AUDIO_LIBRARY_DATA || [],
       projectAudio: [
         { name: 'ForwardAssemblyAIMusic1.mp4', url: 'audio/ForwardAssemblyAIMusic1.mp4' },
         { name: 'ForwardAssemblyAIMusic2.mp4', url: 'audio/ForwardAssemblyAIMusic2.mp4' }
